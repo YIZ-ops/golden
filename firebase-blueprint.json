@@ -1,0 +1,72 @@
+{
+  "entities": {
+    "Quote": {
+      "title": "Quote",
+      "description": "A golden quote, either system-provided or user-added.",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string", "description": "The text content of the quote." },
+        "author": { "type": "string", "description": "The author of the quote." },
+        "source": { "type": "string", "description": "The source of the quote (book, blog, etc.)." },
+        "category": { "type": "string", "description": "Category of the quote source." },
+        "createdBy": { "type": "string", "description": "UID of the user who added it, or 'system'." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp." }
+      },
+      "required": ["content", "author", "createdBy"]
+    },
+    "Favorite": {
+      "title": "Favorite",
+      "description": "A quote favorited by a user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "UID of the user." },
+        "quoteId": { "type": "string", "description": "ID of the quote." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "quoteId"]
+    },
+    "Reflection": {
+      "title": "Reflection",
+      "description": "A user's personal insight or feeling about a quote.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "UID of the user." },
+        "quoteId": { "type": "string", "description": "ID of the quote." },
+        "content": { "type": "string", "description": "The reflection text." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "quoteId", "content"]
+    },
+    "Heartbeat": {
+      "title": "Heartbeat",
+      "description": "A 'like' or 'heartbeat' for a quote. Users can like multiple times.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "UID of the user." },
+        "quoteId": { "type": "string", "description": "ID of the quote." },
+        "count": { "type": "number", "description": "Number of times the user has liked this quote." },
+        "lastLikedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "quoteId", "count"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile information.",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin"] }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/quotes": { "schema": "Quote", "description": "Collection of all quotes." },
+    "/users/{userId}/favorites": { "schema": "Favorite", "description": "User's favorited quotes." },
+    "/users/{userId}/reflections": { "schema": "Reflection", "description": "User's personal reflections." },
+    "/users/{userId}/heartbeats": { "schema": "Heartbeat", "description": "User's heartbeat counts for quotes." },
+    "/users": { "schema": "User", "description": "User profiles." }
+  }
+}
