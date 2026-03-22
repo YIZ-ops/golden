@@ -13,6 +13,7 @@
 1. 多个一级页面用 `bg-white + rounded-[2rem] + shadow` 承载说明、概览、入口和结果区域。
 2. loading 态表达不统一，既有灰色圆点、骨架块，也有纯文本等待。
 3. 应用壳层右上角存在一个“慢慢读”提示卡片，占用视觉注意力，但不承担实际功能。
+4. 路由级 `Suspense`、页面内局部请求、认证按钮提交态、感悟面板加载态目前分别使用不同等待表达，没有形成统一规则。
 
 这些实现虽然完整，但在移动端阅读型产品里显得偏重，页面存在较多“卡片套卡片”的感觉，和“尽量简洁一些”的目标不一致。
 
@@ -20,8 +21,8 @@
 
 1. 所有 loading 等待都要使用 `PixelCat`。
 2. 不需要使用圆角白色背景的地方不要使用，整体尽量简洁。
-3. 所有页面右上方的“慢慢来/慢慢读”卡片去掉。
-4. 上述原则同样适用于认证页，不只限于主应用内页。
+3. 所有 `AppShell` 内页面右上方的“慢慢来/慢慢读”卡片去掉。
+4. 认证页同样适用“简洁化”和 loading 统一原则，但认证页本身并不存在该右上角卡片。
 
 ---
 
@@ -31,15 +32,16 @@
 
 1. 统一整个应用的 loading 表达方式，形成单一视觉语言。
 2. 去掉非必要的大白底大圆角卡片，让页面层级更多依靠排版、间距、细边线和浅底区分。
-3. 删除应用壳层右上角“慢慢读”装饰卡片，降低顶部噪音。
+3. 删除 `AppShell` 应用壳层右上角“慢慢读”装饰卡片，降低顶部噪音。
 4. 在不改变业务流程、接口调用和路由结构的前提下，完成一次全局视觉瘦身。
 
 非目标：
 
 1. 不在本次改版中重做首页主句卡的结构。
-2. 不在本次改版中重新设计底部导航、感悟抽屉、样式抽屉等核心交互组件。
-3. 不在本次改版中引入新的主题系统或色彩方案。
-4. 不在本次改版中调整接口、数据模型或状态管理架构。
+2. 不在本次改版中重新设计底部导航、感悟抽屉、样式抽屉等核心交互组件的布局和信息架构。
+3. 允许为了统一 loading 规则，修改抽屉和面板内部的等待态表达，但不扩大到其整体结构重做。
+4. 不在本次改版中引入新的主题系统或色彩方案。
+5. 不在本次改版中调整接口、数据模型或状态管理架构。
 
 ---
 
@@ -103,7 +105,7 @@
 2. 骨架块模拟卡片
 3. 仅一行纯文本等待但无视觉锚点
 
-统一保留两种 loading 形态：
+统一保留三种 loading 形态：
 
 1. **页面级 loading**
    - 结构：`PixelCat + 简短文案`
@@ -115,11 +117,18 @@
    - 用于分类结果区、局部查询区、面板内部等待态
    - 保持最小承载，不使用骨架卡片列表
 
+3. **按钮级提交态 loading**
+   - 结构：按钮内联 `PixelCat + 提交文案`
+   - 用于登录、注册、发送重置邮件、更新密码、提交感悟等明确的提交动作
+   - 不额外生成独立 loading 容器，按钮尺寸和点击边界保持稳定
+
 为了减少重复，建议由 `src/components/common/LoadingScreen.tsx` 作为统一基础组件，支持：
 
 1. `label`
 2. `compact` 或等价的尺寸控制
 3. 无需白色背景容器的默认样式
+4. 支持路由级 `Suspense` 和页面局部状态复用
+5. 为持续动画提供减弱动画的实现入口，例如基于 `prefers-reduced-motion` 降低或停止运动幅度
 
 ### 4.2 白底圆角使用规则
 
@@ -196,7 +205,7 @@
 调整：
 
 1. 首屏 loading 从当前大圆角渐变容器改为 `PixelCat + 文案`。
-2. 下拉刷新提示保留，但刷新中的主体表达改为 `PixelCat` 风格。
+2. 下拉刷新提示保留；仅在 `refreshing = true` 时，把现有顶部提示条内部内容替换为 `PixelCat + 文案`。`下拉换一组 / 松手刷新` 两个非刷新态继续保留原文本提示，不覆盖 quote stream，也不新增独立刷新遮罩。
 3. 登录提示与错误提示保留当前浮层位置，但视觉做轻量收敛，避免像漂浮卡片。
 
 不做的事：
@@ -220,6 +229,7 @@
 3. 结果区外层去掉白色大卡。
 4. 结果项本身保留轻承载，但从“厚卡”改为“浅底列表块”。
 5. 当前骨架 loading 改为 `PixelCat`。
+6. 搜索触发的人物加载若保留区块等待态，也使用统一的紧凑 loading 表达。
 
 预期结果：
 
@@ -270,8 +280,9 @@
 1. `AuthLayout` 去掉大白色面板，改成直接承载标题、说明和表单。
 2. 表单字段仍保留必要输入边界，但圆角缩小，背景更克制。
 3. 提交按钮保留主按钮形态，但不再依赖页面整体白卡承托。
-4. `ResetPasswordPage` 中“正在验证重置链接”改成 `PixelCat` 等待态。
-5. 忘记密码、登录、注册、重置密码四页保持统一简洁风格。
+4. 登录、注册、发送重置邮件、更新密码等提交态统一改为按钮内联 `PixelCat + 文案`。
+5. `ResetPasswordPage` 中“正在验证重置链接”改成 `PixelCat` 等待态。
+6. 忘记密码、登录、注册、重置密码四页保持统一简洁风格。
 
 ---
 
@@ -289,11 +300,27 @@
 ### 6.2 `src/components/PixelCat.tsx`
 
 原则上不改变动画语义，只作为 loading 主体复用。  
-如需支持不同上下文尺寸，可仅通过 props 调整大小和颜色，不增加复杂状态。
+如需支持不同上下文尺寸，可仅通过 props 调整大小和颜色，不增加复杂状态。  
+若 reduced-motion 入口最终落在该组件，也属于本次改动范围。
 
 ### 6.3 页面内联 loading
 
 凡是页面里写死的“正在确认登录状态...”“正在验证重置链接...”或骨架块占位，都应改为调用统一 loading 组件，而不是继续各写各的。
+
+### 6.4 抽屉与面板内部 loading
+
+本次将抽屉和面板内部的等待态一并纳入统一 loading 规则，但范围仅限等待态本身，不涉及抽屉整体结构调整。
+
+明确包含：
+
+1. `src/components/reflection/ReflectionPanel.tsx` 中的感悟列表加载态
+2. `src/components/reflection/ReflectionPanel.tsx` 中“提交感悟”按钮的内联 loading 表达
+3. `src/pages/home/HomePage.tsx` 中感悟提交状态传递到 `ReflectionPanel` 的最小状态改动
+
+明确不包含：
+
+1. 抽屉圆角、尺寸、动效、布局结构的大改
+2. 样式编辑抽屉的视觉重做
 
 ---
 
@@ -305,15 +332,42 @@
 2. loading 态仍有可断言文本。
 3. 认证页、收藏页、设置页在 loading 和未登录分支下依旧可进入目标流程。
 4. 分类页 loading 改造后，结果区测试仍能稳定断言。
-5. 首页 loading 替换后，原有首页测试断言需要同步更新。
+5. 首页需要新增首屏 loading UI 断言，以及下拉刷新提示条在刷新中显示 `PixelCat + 文案` 的断言。
+6. 路由级 `Suspense fallback` 仍能显示统一 loading。
+7. `PixelCat` 作为全站 loading 时，至少保留稳定的可断言文本与 `aria-label` 或等价状态语义。
+8. 对持续动画实现需要验证 reduced-motion 分支不会破坏渲染和测试。
 
-优先检查和更新：
+需要新增或更新的最小测试：
 
 1. `src/pages/home/HomePage.test.tsx`
-2. `src/pages/favorites/FavoritesPage.test.tsx`
-3. `src/pages/categories/CategoriesPage.test.tsx`
+   - 新增首页首屏 loading 断言
+   - 新增下拉刷新提示条在 `refreshing = true` 时显示 `PixelCat + 文案` 的断言
+2. `src/components/reflection/ReflectionPanel.test.tsx` 或等价测试文件
+   - 新增感悟列表 loading 使用统一 `PixelCat` 的断言
+   - 新增“提交感悟”按钮内联 loading 的断言
+3. `src/pages/favorites/FavoritesPage.test.tsx`
+   - 新增 `authState.loading = true` 分支断言
+   - 显式断言该分支使用统一 loading 语义，而不是纯文本或旧骨架
 4. `src/pages/settings/SettingsPage.test.tsx`
-5. `src/pages/auth/AuthPages.test.tsx`
+   - 新增 `authState.loading = true` 分支断言
+   - 新增 `profile` 局部 loading 使用 `PixelCat` 的断言
+   - 显式断言页面和局部 loading 均使用统一 loading 语义
+5. `src/pages/categories/CategoriesPage.test.tsx`
+   - 更新结果区 loading 断言，去除对骨架块的假设
+   - 显式断言结果区 loading 使用统一 loading 语义
+6. `src/pages/auth/AuthPages.test.tsx`
+   - 新增认证提交态按钮 loading 断言
+   - 新增 `ResetPasswordPage` 链接检查 loading 断言
+7. `src/app/router.test.tsx`
+   - 新增或更新路由级 `Suspense fallback` loading 断言
+8. `src/app/layout/AppShell.test.tsx` 或等价测试文件
+   - 新增右上角“慢慢读”卡片已移除的断言
+9. `src/components/common/LoadingScreen.test.tsx` 或等价测试文件
+   - 新增统一 loading 的 `aria-label` 或等价状态语义断言
+10. `src/components/PixelCat.test.tsx` 或等价测试文件
+   - 新增 `PixelCat` props 行为断言
+11. `src/components/common/LoadingScreen.test.tsx` 或等价测试文件
+   - 若 reduced-motion 入口落在 `LoadingScreen`，在此新增对应断言；若入口落在 `PixelCat`，则在 `src/components/PixelCat.test.tsx` 中新增对应断言
 
 验证顺序：
 
@@ -327,8 +381,9 @@
 1. 去掉大白卡后，局部可读性可能下降，因此需要保留“浅底 + 细边线”的最低承载，而不是机械地全部抹平。
 2. 页面结构类名会调整，现有测试若依赖具体 DOM 层级，需要同步修正。
 3. 认证页去掉外层白色面板后，表单与背景的对比度必须保持可读。
-4. 首页提示和刷新区减重时，不能影响触达和状态识别。
-5. 当前仓库工作树已有其他未提交改动，实现时必须只改这次 UI 相关文件，不回退他人修改。
+4. 首页提示和刷新区减重时，不能影响触达和状态识别；刷新时不能遮挡当前句流内容。
+5. `PixelCat` 升格为统一 loading 后，需要保证路由级、页面级、按钮级三类场景都具备可访问的状态语义。
+6. 当前仓库工作树已有其他未提交改动，实现时必须只改这次 UI 相关文件，不回退他人修改。
 
 ---
 
@@ -338,17 +393,20 @@
 
 1. `src/app/layout/AppShell.tsx`
 2. `src/components/common/LoadingScreen.tsx`
-3. `src/pages/home/HomePage.tsx`
-4. `src/pages/categories/components/CategoryFilters.tsx`
-5. `src/pages/categories/components/CategoryQuoteGrid.tsx`
-6. `src/pages/favorites/FavoritesPage.tsx`
-7. `src/pages/settings/SettingsPage.tsx`
-8. `src/pages/auth/AuthLayout.tsx`
-9. `src/pages/auth/LoginPage.tsx`
-10. `src/pages/auth/RegisterPage.tsx`
-11. `src/pages/auth/ForgotPasswordPage.tsx`
-12. `src/pages/auth/ResetPasswordPage.tsx`
-13. 对应测试文件
+3. `src/components/PixelCat.tsx`
+4. `src/components/reflection/ReflectionPanel.tsx`
+5. `src/app/router.tsx`
+6. `src/pages/home/HomePage.tsx`
+7. `src/pages/categories/components/CategoryFilters.tsx`
+8. `src/pages/categories/components/CategoryQuoteGrid.tsx`
+9. `src/pages/favorites/FavoritesPage.tsx`
+10. `src/pages/settings/SettingsPage.tsx`
+11. `src/pages/auth/AuthLayout.tsx`
+12. `src/pages/auth/LoginPage.tsx`
+13. `src/pages/auth/RegisterPage.tsx`
+14. `src/pages/auth/ForgotPasswordPage.tsx`
+15. `src/pages/auth/ResetPasswordPage.tsx`
+16. 对应测试文件
 
 原则：
 
@@ -365,7 +423,7 @@
 
 1. 全站 loading 统一使用 `PixelCat`。
 2. 非必要区域移除白底大圆角大阴影卡片。
-3. 删除所有页面右上角的“慢慢读”卡片入口。
+3. 删除所有 `AppShell` 内页面右上角的“慢慢读”卡片入口。
 4. 收藏、设置、分类、认证页统一回到更直接的排版式界面。
 
 这样可以在不动核心功能的前提下，把当前应用从“卡片堆叠式界面”收敛成更轻、更直接、更适合阅读内容的移动端 UI。
