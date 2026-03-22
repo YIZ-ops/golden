@@ -1,9 +1,9 @@
-import type { User } from '@supabase/supabase-js';
+import type { User } from "@supabase/supabase-js";
 
-import type { UserProfile } from '../../src/types/user';
+import type { UserProfile } from "../../src/types/user";
 
 type ProfileClient = {
-  from: (table: 'profiles') => {
+  from: (table: "profiles") => {
     upsert: (
       values: {
         id: string;
@@ -14,7 +14,10 @@ type ProfileClient = {
       options: { onConflict: string; ignoreDuplicates: boolean },
     ) => Promise<{ error: Error | null }>;
     select: (columns: string) => {
-      eq: (column: string, value: string) => {
+      eq: (
+        column: string,
+        value: string,
+      ) => {
         maybeSingle: () => Promise<{ data: UserProfile | null; error: Error | null }>;
       };
     };
@@ -23,13 +26,11 @@ type ProfileClient = {
 
 export async function ensureProfile(userClient: ProfileClient, user: User) {
   const displayName =
-    readString(user.user_metadata?.display_name) ??
-    readString(user.user_metadata?.full_name) ??
-    (user.email ? user.email.split('@')[0] : null);
+    readString(user.user_metadata?.display_name) ?? readString(user.user_metadata?.full_name) ?? (user.email ? user.email.split("@")[0] : null);
 
   const avatarUrl = readString(user.user_metadata?.avatar_url) ?? null;
 
-  const { error: upsertError } = await userClient.from('profiles').upsert(
+  const { error: upsertError } = await userClient.from("profiles").upsert(
     {
       id: user.id,
       email: user.email ?? null,
@@ -37,7 +38,7 @@ export async function ensureProfile(userClient: ProfileClient, user: User) {
       avatar_url: avatarUrl,
     },
     {
-      onConflict: 'id',
+      onConflict: "id",
       ignoreDuplicates: true,
     },
   );
@@ -46,7 +47,7 @@ export async function ensureProfile(userClient: ProfileClient, user: User) {
     throw upsertError;
   }
 
-  const { data, error } = await userClient.from('profiles').select('*').eq('id', user.id).maybeSingle();
+  const { data, error } = await userClient.from("profiles").select("*").eq("id", user.id).maybeSingle();
 
   if (error) {
     throw error;
@@ -56,5 +57,5 @@ export async function ensureProfile(userClient: ProfileClient, user: User) {
 }
 
 function readString(value: unknown) {
-  return typeof value === 'string' && value.trim() ? value : null;
+  return typeof value === "string" && value.trim() ? value : null;
 }
