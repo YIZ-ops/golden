@@ -1,8 +1,8 @@
-import { createUnauthorizedErrorResponse, getOptionalBearerToken, isAuthFailure } from '../_lib/auth';
-import { badRequest, internalError, unauthorized, successResponse } from '../_lib/http';
-import { createAnonServerClient, createUserServerClient } from '../_lib/supabase';
-import { getViewerStateMap } from './viewer-state';
-import { isQueryValidationError, parseQuoteQuery } from './query';
+import { createUnauthorizedErrorResponse, getOptionalBearerToken, getUserIdFromJwt, isAuthFailure } from "../_lib/auth";
+import { badRequest, internalError, successResponse, unauthorized } from "../_lib/http";
+import { createAnonServerClient, createUserServerClient } from "../_lib/supabase";
+import { getViewerStateMap } from "./viewer-state";
+import { isQueryValidationError, parseQuoteQuery } from "./query";
 
 interface QuoteRow {
   id: string;
@@ -17,7 +17,7 @@ interface QuoteRow {
   people?: {
     id: string;
     name: string;
-    role: 'author' | 'singer';
+    role: "author" | "singer";
   } | null;
   works?: {
     id: string;
@@ -28,7 +28,7 @@ interface QuoteRow {
 
 export async function GET(request: Request) {
   try {
-    const authHeader = request.headers.get('Authorization');
+    const authHeader = request.headers.get("Authorization");
     const maybeToken = getOptionalBearerToken(authHeader);
 
     if (isAuthFailure(maybeToken)) {
@@ -39,15 +39,15 @@ export async function GET(request: Request) {
     let queryClient = createAnonServerClient();
     let viewerStateMap: Awaited<ReturnType<typeof getViewerStateMap>> | null = null;
 
-    if (typeof maybeToken === 'string') {
+    if (typeof maybeToken === "string") {
       const userClient = createUserServerClient(maybeToken);
-      const { data, error } = await userClient.auth.getUser(maybeToken);
+      const userId = getUserIdFromJwt(maybeToken);
 
-      if (error || !data.user) {
-        return unauthorized('当前登录凭证无效，请重新登录。', 'INVALID_TOKEN');
+      if (!userId) {
+        return unauthorized("当前登录凭证无效，请重新登录。", "INVALID_TOKEN");
       }
 
-      currentUserId = data.user.id;
+      currentUserId = userId;
       queryClient = userClient;
       viewerStateMap = await getViewerStateMap(userClient);
     }
@@ -62,28 +62,28 @@ export async function GET(request: Request) {
     const rangeEnd = rangeStart + parsed.pageSize - 1;
 
     let query = queryClient
-      .from('quotes')
-      .select('*, people(id, name, role), works(id, title, work_type)', { count: 'exact' })
-      .order('created_at', { ascending: false });
+      .from("quotes")
+      .select("*, people(id, name, role), works(id, title, work_type)", { count: "exact" })
+      .order("created_at", { ascending: false });
 
     if (parsed.category) {
-      query = query.eq('category', parsed.category);
+      query = query.eq("category", parsed.category);
     }
 
     if (parsed.authorRole) {
-      query = query.eq('author_role', parsed.authorRole);
+      query = query.eq("author_role", parsed.authorRole);
     }
 
     if (parsed.author) {
-      query = query.eq('author', parsed.author);
+      query = query.eq("author", parsed.author);
     }
 
     if (parsed.personId) {
-      query = query.eq('person_id', parsed.personId);
+      query = query.eq("person_id", parsed.personId);
     }
 
     if (parsed.keyword) {
-      query = query.ilike('content', `%${parsed.keyword}%`);
+      query = query.ilike("content", `%${parsed.keyword}%`);
     }
 
     const { data, count, error } = await query.range(rangeStart, rangeEnd);
@@ -137,13 +137,13 @@ export async function GET(request: Request) {
       total: count ?? items.length,
     });
   } catch (error) {
-    console.error('GET /api/quotes failed', error);
-    return internalError('获取金句列表失败。', 'QUOTE_LIST_FAILED');
+    console.error("GET /api/quotes failed", error);
+    return internalError("获取金句列表失败。", "QUOTE_LIST_FAILED");
   }
 }
 
 function normalizeSourceType(value?: string | null) {
-  if (value === 'seed' || value === 'hitokoto' || value === 'manual') {
+  if (value === "seed" || value === "hitokoto" || value === "manual") {
     return value;
   }
 
@@ -151,7 +151,7 @@ function normalizeSourceType(value?: string | null) {
 }
 
 function normalizeWorkType(value?: string | null) {
-  if (value === 'book' || value === 'song' || value === 'speech' || value === 'interview' || value === 'essay' || value === 'other') {
+  if (value === "book" || value === "song" || value === "speech" || value === "interview" || value === "essay" || value === "other") {
     return value;
   }
 

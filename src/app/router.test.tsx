@@ -14,6 +14,8 @@ describe('App router', () => {
     );
 
     expect(await screen.findByRole('heading', { name: '首页' })).toBeInTheDocument();
+    expect(screen.getByText('今天想读哪一句')).toBeInTheDocument();
+    expect(await screen.findByTestId('home-quote-page')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '首页' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '分类' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '收藏' })).toBeInTheDocument();
@@ -21,10 +23,10 @@ describe('App router', () => {
   });
 
   it.each([
-    ['/categories', '分类'],
-    ['/favorites', '收藏'],
-    ['/settings', '设置'],
-  ])('renders %s as %s', async (path, heading) => {
+    ['/categories', '分类', '按主题和作者慢慢找'],
+    ['/favorites', '收藏', '把想反复读的句子留在这里'],
+    ['/settings', '设置', '管理账号与偏好'],
+  ])('renders %s with the shared section header', async (path, heading, description) => {
     render(
       <Suspense fallback={<LoadingScreen label="页面加载中..." />}>
         <RouterProvider router={createAppRouter([path])} />
@@ -32,5 +34,6 @@ describe('App router', () => {
     );
 
     expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
+    expect(screen.getByText(description)).toBeInTheDocument();
   });
 });

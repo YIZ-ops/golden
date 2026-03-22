@@ -19,14 +19,20 @@ export async function getFavorites(params: GetFavoritesParams = {}) {
 }
 
 export async function favoriteQuote(quoteId: string) {
-  return apiRequest<{ favorited: true }>(`/api/favorites/${quoteId}`, {
+  return apiRequest<{ favorited: true }>('/api/favorites', {
     method: 'POST',
+    body: {
+      quoteId,
+    },
   });
 }
 
 export async function unfavoriteQuote(quoteId: string) {
-  return apiRequest<{ favorited: false }>(`/api/favorites/${quoteId}`, {
+  return apiRequest<{ favorited: false }>('/api/favorites', {
     method: 'DELETE',
+    body: {
+      quoteId,
+    },
   });
 }
 

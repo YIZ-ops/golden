@@ -2,6 +2,8 @@ import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { LoadingScreen } from '@/components/common/LoadingScreen';
+import { PixelCat } from '@/components/PixelCat';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from '@/pages/auth/AuthLayout';
 import { bootstrapRecoverySession } from '@/services/supabase/session';
@@ -77,9 +79,7 @@ export function ResetPasswordPage() {
         </Link>
       }
     >
-      {status === 'checking' ? (
-        <p className="text-sm text-stone-500">正在验证重置链接...</p>
-      ) : null}
+      {status === 'checking' ? <LoadingScreen compact label="正在验证重置链接..." /> : null}
 
       {status === 'expired' ? (
         <div className="space-y-3">
@@ -101,7 +101,7 @@ export function ResetPasswordPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 outline-none transition focus:border-stone-400 focus:bg-white"
+              className="w-full rounded-xl border border-stone-200 bg-[#f8f4eb] px-4 py-3 outline-none transition focus:border-stone-400 focus:bg-[#fcf9f3]"
             />
           </div>
           <div className="space-y-2">
@@ -113,17 +113,25 @@ export function ResetPasswordPage() {
               type="password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 outline-none transition focus:border-stone-400 focus:bg-white"
+              className="w-full rounded-xl border border-stone-200 bg-[#f8f4eb] px-4 py-3 outline-none transition focus:border-stone-400 focus:bg-[#fcf9f3]"
             />
           </div>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           {success ? <p className="text-sm text-emerald-700">{success}</p> : null}
           <button
+            aria-label="更新密码"
             type="submit"
             disabled={loading || submitting}
-            className="w-full rounded-2xl bg-stone-900 px-4 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:bg-stone-400"
+            className="w-full rounded-xl bg-stone-900 px-4 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:bg-stone-400"
           >
-            {submitting ? '更新中...' : '更新密码'}
+            {submitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <PixelCat ariaLabel="loading-cat" className="text-white" size={16} />
+                <span>更新中...</span>
+              </span>
+            ) : (
+              '更新密码'
+            )}
           </button>
         </form>
       ) : null}

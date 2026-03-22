@@ -1,10 +1,15 @@
-import { unauthorized } from './http';
+import { unauthorized } from "./http";
 
 export interface AuthFailure {
   ok: false;
   status: 401;
   message: string;
-  code: 'MISSING_AUTH_HEADER' | 'INVALID_AUTH_HEADER' | 'TOKEN_EXPIRED';
+  code: "MISSING_AUTH_HEADER" | "INVALID_AUTH_HEADER" | "TOKEN_EXPIRED";
+}
+
+interface JwtPayload {
+  exp?: number;
+  sub?: string;
 }
 
 export function getOptionalBearerToken(header: string | null): string | AuthFailure | null {
@@ -20,8 +25,8 @@ export function requireBearerToken(header: string | null): string | AuthFailure 
     return {
       ok: false,
       status: 401,
-      message: '当前请求缺少 Authorization 请求头。',
-      code: 'MISSING_AUTH_HEADER',
+      message: "当前请求缺少 Authorization 请求头。",
+      code: "MISSING_AUTH_HEADER",
     };
   }
 
@@ -33,27 +38,29 @@ export function createUnauthorizedErrorResponse(result: AuthFailure) {
 }
 
 export function isAuthFailure(value: string | AuthFailure | null): value is AuthFailure {
-  return Boolean(value && typeof value === 'object' && 'ok' in value && value.ok === false);
+  return Boolean(value && typeof value === "object" && "ok" in value && value.ok === false);
 }
 
 export function isJwtExpired(token: string) {
-  const parts = token.split('.');
+  const payload = parseJwtPayload(token);
 
-  if (parts.length < 2) {
+  if (!payload?.exp) {
     return false;
   }
 
-  try {
-    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8')) as { exp?: number };
+  return payload.exp <= Math.floor(Date.now() / 1000);
+}
 
-    if (!payload.exp) {
-      return false;
-    }
+export function getUserIdFromJwt(token: string) {
+  const payload = parseJwtPayload(token);
+  const userId = payload?.sub;
 
-    return payload.exp <= Math.floor(Date.now() / 1000);
-  } catch {
-    return false;
+  if (!userId || typeof userId !== "string") {
+    return null;
   }
+
+  const normalized = userId.trim();
+  return normalized || null;
 }
 
 function parseBearerHeader(header: string): string | AuthFailure {
@@ -63,8 +70,8 @@ function parseBearerHeader(header: string): string | AuthFailure {
     return {
       ok: false,
       status: 401,
-      message: 'Authorization 请求头格式无效。',
-      code: 'INVALID_AUTH_HEADER',
+      message: "Authorization 请求头格式无效。",
+      code: "INVALID_AUTH_HEADER",
     };
   }
 
@@ -74,8 +81,8 @@ function parseBearerHeader(header: string): string | AuthFailure {
     return {
       ok: false,
       status: 401,
-      message: 'Authorization 请求头格式无效。',
-      code: 'INVALID_AUTH_HEADER',
+      message: "Authorization 请求头格式无效。",
+      code: "INVALID_AUTH_HEADER",
     };
   }
 
@@ -83,10 +90,24 @@ function parseBearerHeader(header: string): string | AuthFailure {
     return {
       ok: false,
       status: 401,
-      message: '登录会话已过期，请重新登录。',
-      code: 'TOKEN_EXPIRED',
+      message: "登录会话已过期，请重新登录。",
+      code: "TOKEN_EXPIRED",
     };
   }
 
   return token;
+}
+
+function parseJwtPayload(token: string): JwtPayload | null {
+  const parts = token.split(".");
+
+  if (parts.length < 2) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8")) as JwtPayload;
+  } catch {
+    return null;
+  }
 }

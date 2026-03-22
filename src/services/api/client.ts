@@ -46,6 +46,14 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
     throw new ApiClientError(response.status, errorPayload.message, errorPayload.code);
   }
 
+  if (payload === null) {
+    throw new ApiClientError(
+      response.status,
+      '接口返回格式错误。',
+      'NON_JSON_API_RESPONSE',
+    );
+  }
+
   return payload as T;
 }
 

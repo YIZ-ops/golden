@@ -2,6 +2,7 @@ import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { PixelCat } from '@/components/PixelCat';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from '@/pages/auth/AuthLayout';
 
@@ -12,13 +13,11 @@ export function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
-    setSuccess('');
 
     if (!email.trim()) {
       setError('请输入邮箱地址');
@@ -37,8 +36,13 @@ export function RegisterPage() {
 
     try {
       setSubmitting(true);
-      await signUpWithPassword(email.trim(), password);
-      setSuccess('注册成功，请使用刚创建的账号登录');
+      const result = await signUpWithPassword(email.trim(), password);
+
+      if (result.session) {
+        navigate('/');
+        return;
+      }
+
       navigate('/auth/login');
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : '注册失败，请稍后重试。');
@@ -62,13 +66,20 @@ export function RegisterPage() {
         <Field label="密码" type="password" value={password} onChange={setPassword} />
         <Field label="确认密码" type="password" value={confirmPassword} onChange={setConfirmPassword} />
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
-        {success ? <p className="text-sm text-emerald-700">{success}</p> : null}
         <button
+          aria-label="注册"
           type="submit"
           disabled={loading || submitting}
-          className="w-full rounded-2xl bg-stone-900 px-4 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:bg-stone-400"
+          className="w-full rounded-xl bg-stone-900 px-4 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:bg-stone-400"
         >
-          {submitting ? '注册中...' : '注册'}
+          {submitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <PixelCat ariaLabel="loading-cat" className="text-white" size={16} />
+              <span>注册中...</span>
+            </span>
+          ) : (
+            '注册'
+          )}
         </button>
       </form>
     </AuthLayout>
@@ -98,7 +109,7 @@ function Field({
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 outline-none transition focus:border-stone-400 focus:bg-white"
+        className="w-full rounded-xl border border-stone-200 bg-[#f8f4eb] px-4 py-3 outline-none transition focus:border-stone-400 focus:bg-[#fcf9f3]"
       />
     </div>
   );

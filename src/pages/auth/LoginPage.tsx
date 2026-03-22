@@ -2,6 +2,7 @@ import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { PixelCat } from '@/components/PixelCat';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from '@/pages/auth/AuthLayout';
 
@@ -64,11 +65,19 @@ export function LoginPage() {
         <Field label="密码" type="password" value={password} onChange={setPassword} error={fieldErrors.password} />
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
         <button
+          aria-label="登录"
           type="submit"
           disabled={loading || submitting}
-          className="w-full rounded-2xl bg-stone-900 px-4 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:bg-stone-400"
+          className="w-full rounded-xl bg-stone-900 px-4 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:bg-stone-400"
         >
-          {submitting ? '登录中...' : '登录'}
+          {submitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <PixelCat ariaLabel="loading-cat" className="text-white" size={16} />
+              <span>登录中...</span>
+            </span>
+          ) : (
+            '登录'
+          )}
         </button>
       </form>
     </AuthLayout>
@@ -100,7 +109,7 @@ function Field({
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 outline-none transition focus:border-stone-400 focus:bg-white"
+        className="w-full rounded-xl border border-stone-200 bg-[#f8f4eb] px-4 py-3 outline-none transition focus:border-stone-400 focus:bg-[#fcf9f3]"
       />
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
     </div>

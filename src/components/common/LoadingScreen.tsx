@@ -1,9 +1,28 @@
-export function LoadingScreen({ label = '金句加载中...' }: { label?: string }) {
+import { PixelCat } from '@/components/PixelCat';
+import { cn } from '@/utils/cn';
+
+export function LoadingScreen({
+  label = '金句加载中...',
+  compact = false,
+  className,
+}: {
+  label?: string;
+  compact?: boolean;
+  className?: string;
+}) {
   return (
-    <div className="flex min-h-[28rem] items-center justify-center rounded-[2rem] border border-stone-200/80 bg-white p-10 shadow-sm">
-      <div className="text-center">
-        <div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-stone-200" />
-        <p className="mt-4 font-serif text-lg text-stone-700">{label}</p>
+    <div
+      aria-live="polite"
+      className={cn(
+        'flex items-center justify-center text-stone-600',
+        compact ? 'min-h-[5rem]' : 'min-h-[16rem]',
+        className,
+      )}
+      role="status"
+    >
+      <div className={cn('flex flex-col items-center text-center', compact ? 'gap-2' : 'gap-3')}>
+        <PixelCat ariaLabel="loading-cat" className="text-stone-500" size={compact ? 20 : 28} />
+        <p className={cn('font-serif text-stone-700', compact ? 'text-sm' : 'text-lg')}>{label}</p>
       </div>
     </div>
   );

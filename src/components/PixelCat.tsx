@@ -1,7 +1,16 @@
 import { motion } from 'motion/react';
 
-export const PixelCat = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+export const PixelCat = ({
+  size = 24,
+  className = '',
+  ariaLabel = 'loading-cat',
+}: {
+  size?: number;
+  className?: string;
+  ariaLabel?: string;
+}) => (
   <motion.svg
+    aria-label={ariaLabel}
     animate={{
       y: [0, -1, 0],
       rotate: [0, 1, -1, 0],
@@ -9,6 +18,7 @@ export const PixelCat = ({ size = 24, className = '' }: { size?: number; classNa
     className={className}
     fill="none"
     height={size}
+    role="img"
     transition={{
       repeat: Infinity,
       duration: 3,

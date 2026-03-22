@@ -1,4 +1,6 @@
+import { LoadingScreen } from '@/components/common/LoadingScreen';
 import { EmptyState } from '@/components/common/EmptyState';
+import { PixelCat } from '@/components/PixelCat';
 
 interface ReflectionItem {
   id: string;
@@ -9,6 +11,7 @@ interface ReflectionItem {
 interface ReflectionPanelProps {
   open: boolean;
   loading: boolean;
+  submitting?: boolean;
   items: ReflectionItem[];
   draft: string;
   onDraftChange: (value: string) => void;
@@ -19,6 +22,7 @@ interface ReflectionPanelProps {
 export function ReflectionPanel({
   open,
   loading,
+  submitting = false,
   items,
   draft,
   onDraftChange,
@@ -43,7 +47,7 @@ export function ReflectionPanel({
         </div>
 
         <div className="mt-5 max-h-64 space-y-3 overflow-y-auto pr-1">
-          {loading ? <p className="text-sm text-stone-500">感悟加载中...</p> : null}
+          {loading ? <LoadingScreen compact label="感悟加载中..." /> : null}
           {!loading && items.length === 0 ? (
             <EmptyState title="还没有感悟" description="写下这一句触动你的原因，它会保存在这里。" />
           ) : null}
@@ -68,11 +72,20 @@ export function ReflectionPanel({
             />
           </label>
           <button
+            aria-label="提交感悟"
             className="w-full rounded-[1.5rem] bg-stone-900 px-4 py-3 text-sm text-white"
+            disabled={submitting}
             onClick={onSubmit}
             type="button"
           >
-            提交感悟
+            {submitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <PixelCat ariaLabel="loading-cat" className="text-white" size={16} />
+                <span>提交中...</span>
+              </span>
+            ) : (
+              '提交感悟'
+            )}
           </button>
         </div>
       </div>

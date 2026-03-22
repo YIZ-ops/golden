@@ -8,7 +8,10 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   signInWithPassword: (email: string, password: string) => Promise<void>;
-  signUpWithPassword: (email: string, password: string) => Promise<void>;
+  signUpWithPassword: (
+    email: string,
+    password: string,
+  ) => Promise<{ session: Session | null; user: User | null }>;
   sendResetPasswordEmail: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -61,11 +64,13 @@ export function useAuth(): AuthState {
 
   async function signUpWithPassword(email: string, password: string) {
     assertSupabaseConfigured();
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email, password });
 
     if (error) {
       throw error;
     }
+
+    return data;
   }
 
   async function sendResetPasswordEmail(email: string) {

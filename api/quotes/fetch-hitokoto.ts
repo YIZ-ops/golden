@@ -1,14 +1,7 @@
 import { HITOKOTO_CATEGORIES } from '@/constants/categories';
 
-import { badRequest, internalError, successResponse, upstreamError } from '../_lib/http';
-
-interface HitokotoResponse {
-  uuid: string;
-  hitokoto: string;
-  from: string;
-  from_who: string | null;
-  type: string;
-}
+import { ingestHitokotoQuote } from './ingest';
+import { badRequest, internalError, successResponse } from '../_lib/http';
 
 const validCategoryIds = new Set(HITOKOTO_CATEGORIES.map((item) => item.id));
 
@@ -21,27 +14,16 @@ export async function POST(request: Request) {
       return badRequest('category 参数无效。', 'INVALID_HITOKOTO_CATEGORY');
     }
 
-    const query = category ? `?c=${encodeURIComponent(category)}` : '';
-    const response = await fetch(`https://v1.hitokoto.cn/${query}`);
-
-    if (!response.ok) {
-      return upstreamError('一言接口暂时不可用。', 'HITOKOTO_UPSTREAM_FAILED');
-    }
-
-    const data = (await response.json()) as HitokotoResponse;
-    const matchedCategory = HITOKOTO_CATEGORIES.find((item) => item.id === data.type || item.id === category);
+    const quote = await ingestHitokotoQuote(category);
 
     return successResponse({
-      quote: {
-        id: data.uuid,
-        content: data.hitokoto,
-        author: data.from_who ?? '佚名',
-        source: data.from,
-        category: matchedCategory?.name ?? '其他',
-        sourceType: 'hitokoto',
-      },
+      quote,
     });
   } catch (error) {
+    if (error instanceof Response) {
+      return error;
+    }
+
     console.error('POST /api/quotes/fetch-hitokoto failed', error);
     return internalError('获取一言失败。', 'FETCH_HITOKOTO_FAILED');
   }

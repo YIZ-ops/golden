@@ -16,6 +16,17 @@ export type QuoteListItem = Quote & {
   viewerState?: ViewerState;
 };
 
+export async function getHomeQuotes(limit = 5, excludeIds: string[] = []) {
+  const params = new URLSearchParams();
+  params.set('limit', String(limit));
+
+  if (excludeIds.length > 0) {
+    params.set('excludeIds', excludeIds.join(','));
+  }
+
+  return apiRequest<{ items: QuoteListItem[] }>(`/api/home/quotes?${params.toString()}`);
+}
+
 export async function getQuotes(params: GetQuotesParams = {}) {
   const query = buildQueryString(params);
   const path = query ? `/api/quotes?${query}` : '/api/quotes';

@@ -1,6 +1,7 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { LoadingScreen } from '@/components/common/LoadingScreen';
 import { useAuth } from '@/hooks/useAuth';
 import { getProfile, updateProfile } from '@/services/api/profile';
 import { ApiClientError } from '@/services/api/client';
@@ -81,21 +82,15 @@ export function SettingsPage() {
   }
 
   if (loading) {
-    return (
-      <PageCard eyebrow="Settings" title="设置">
-        正在确认登录状态...
-      </PageCard>
-    );
+    return <LoadingScreen label="正在确认登录状态..." />;
   }
 
   if (!user) {
     return (
       <section className="space-y-4">
-        <PageCard eyebrow="Settings" title="设置">
-          当前未登录。登录后可同步收藏、感悟和主题偏好。
-        </PageCard>
+        <IntroCopy>当前未登录。登录后可同步收藏、感悟和主题偏好。</IntroCopy>
 
-        <div className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
+        <div className="border-t border-stone-200/70 pt-4">
           <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Account</p>
           <h3 className="mt-3 font-serif text-2xl text-stone-900">账号入口</h3>
           <div className="mt-5 grid gap-3">
@@ -119,9 +114,7 @@ export function SettingsPage() {
 
   return (
     <section className="space-y-4">
-      <PageCard eyebrow="Settings" title="设置">管理账号、主题和同步偏好。</PageCard>
-
-      <div className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
+      <div className="border-b border-stone-200/70 pb-5">
         <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Account</p>
         {profile ? (
           <div className="mt-4 flex items-center justify-between gap-4">
@@ -143,11 +136,11 @@ export function SettingsPage() {
             </button>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-stone-500">正在加载资料...</p>
+          <LoadingScreen compact label="正在加载资料..." />
         )}
       </div>
 
-      <div className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
+      <div className="space-y-3">
         <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Preference</p>
         <h3 className="mt-3 font-serif text-2xl text-stone-900">主题偏好</h3>
         <div className="mt-5 flex flex-wrap gap-3">
@@ -177,22 +170,8 @@ export function SettingsPage() {
   );
 }
 
-function PageCard({
-  eyebrow,
-  title,
-  children,
-}: {
-  eyebrow: string;
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
-      <p className="text-xs uppercase tracking-[0.35em] text-stone-400">{eyebrow}</p>
-      <h2 className="mt-3 font-serif text-3xl text-stone-900">{title}</h2>
-      <p className="mt-3 text-sm leading-6 text-stone-600">{children}</p>
-    </div>
-  );
+function IntroCopy({ children }: { children: string }) {
+  return <p className="border-b border-stone-200/70 pb-4 text-sm leading-6 text-stone-600">{children}</p>;
 }
 
 function isUnauthorizedError(error: unknown) {

@@ -15,12 +15,12 @@ export function AuthLayout({ title, description, footer, children }: AuthLayoutP
           返回首页
         </Link>
 
-        <section className="rounded-[2rem] border border-stone-200/80 bg-white p-8 shadow-[0_20px_60px_rgba(28,25,23,0.08)]">
+        <section className="space-y-6">
           <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Auth</p>
           <h1 className="mt-3 font-serif text-3xl text-stone-900">{title}</h1>
           <p className="mt-3 text-sm leading-6 text-stone-600">{description}</p>
 
-          <div className="mt-8 space-y-5">{children}</div>
+          <div className="space-y-5 border-t border-stone-200/70 pt-6">{children}</div>
           {footer ? <div className="mt-6 text-sm text-stone-500">{footer}</div> : null}
         </section>
       </div>

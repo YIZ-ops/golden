@@ -2,6 +2,7 @@ import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { PixelCat } from '@/components/PixelCat';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from '@/pages/auth/AuthLayout';
 
@@ -53,17 +54,25 @@ export function ForgotPasswordPage() {
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 outline-none transition focus:border-stone-400 focus:bg-white"
+            className="w-full rounded-xl border border-stone-200 bg-[#f8f4eb] px-4 py-3 outline-none transition focus:border-stone-400 focus:bg-[#fcf9f3]"
           />
         </div>
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
         {success ? <p className="text-sm text-emerald-700">{success}</p> : null}
         <button
+          aria-label="发送重置邮件"
           type="submit"
           disabled={loading || submitting}
-          className="w-full rounded-2xl bg-stone-900 px-4 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:bg-stone-400"
+          className="w-full rounded-xl bg-stone-900 px-4 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:bg-stone-400"
         >
-          {submitting ? '发送中...' : '发送重置邮件'}
+          {submitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <PixelCat ariaLabel="loading-cat" className="text-white" size={16} />
+              <span>发送中...</span>
+            </span>
+          ) : (
+            '发送重置邮件'
+          )}
         </button>
       </form>
     </AuthLayout>

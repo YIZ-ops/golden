@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
-    "dev:api": "npx --yes vercel@latest dev --listen 3001",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "db:init:remote": "node --env-file=.env ./scripts/init-remote-db.mjs",
+    "quotes:ingest:hitokoto": "node --env-file=.env ./scripts/ingest-hitokoto.mjs",
     "lint": "tsc --noEmit",
     "test": "vitest run",
+    "vdev": "npx vercel dev --listen 3000",
     "test:watch": "vitest"
   },
   "dependencies": {
