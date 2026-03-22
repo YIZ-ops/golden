@@ -1,14 +1,44 @@
+import { Suspense, lazy } from 'react';
 import { createBrowserRouter, createMemoryRouter, RouterProvider, type RouteObject } from 'react-router-dom';
 
 import { AppShell } from '@/app/layout/AppShell';
-import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
-import { LoginPage } from '@/pages/auth/LoginPage';
-import { RegisterPage } from '@/pages/auth/RegisterPage';
-import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
-import { CategoriesPage } from '@/pages/categories/CategoriesPage';
-import { FavoritesPage } from '@/pages/favorites/FavoritesPage';
+import { LoadingScreen } from '@/components/common/LoadingScreen';
 import { HomePage } from '@/pages/home/HomePage';
-import { SettingsPage } from '@/pages/settings/SettingsPage';
+
+const CategoriesPage = lazy(async () => {
+  const module = await import('@/pages/categories/CategoriesPage');
+  return { default: module.CategoriesPage };
+});
+
+const FavoritesPage = lazy(async () => {
+  const module = await import('@/pages/favorites/FavoritesPage');
+  return { default: module.FavoritesPage };
+});
+
+const SettingsPage = lazy(async () => {
+  const module = await import('@/pages/settings/SettingsPage');
+  return { default: module.SettingsPage };
+});
+
+const LoginPage = lazy(async () => {
+  const module = await import('@/pages/auth/LoginPage');
+  return { default: module.LoginPage };
+});
+
+const RegisterPage = lazy(async () => {
+  const module = await import('@/pages/auth/RegisterPage');
+  return { default: module.RegisterPage };
+});
+
+const ForgotPasswordPage = lazy(async () => {
+  const module = await import('@/pages/auth/ForgotPasswordPage');
+  return { default: module.ForgotPasswordPage };
+});
+
+const ResetPasswordPage = lazy(async () => {
+  const module = await import('@/pages/auth/ResetPasswordPage');
+  return { default: module.ResetPasswordPage };
+});
 
 export const appRoutes: RouteObject[] = [
   {
@@ -40,5 +70,9 @@ export function createAppRouter(initialEntries?: string[]) {
 }
 
 export function AppRouter() {
-  return <RouterProvider router={browserRouter} />;
+  return (
+    <Suspense fallback={<LoadingScreen label="页面加载中..." />}>
+      <RouterProvider router={browserRouter} />
+    </Suspense>
+  );
 }

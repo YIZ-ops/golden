@@ -1,3 +1,17 @@
+import type { PersonRole } from '@/types/person';
+
+export interface QuotePerson {
+  id: string;
+  name: string;
+  role: PersonRole;
+}
+
+export interface QuoteWork {
+  id: string;
+  title: string;
+  workType?: 'book' | 'song' | 'speech' | 'interview' | 'essay' | 'other';
+}
+
 export interface Quote {
   id: string;
   content: string;
@@ -5,6 +19,8 @@ export interface Quote {
   source?: string;
   category?: string;
   sourceType?: 'seed' | 'hitokoto' | 'manual';
+  person?: QuotePerson;
+  work?: QuoteWork;
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;

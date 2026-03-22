@@ -119,7 +119,7 @@ describe('GET /api/quotes', () => {
       pageSize: 10,
       total: 1,
     });
-  });
+  }, 30000);
 
   it('returns 401 before validation when an explicit token is invalid', async () => {
     userClient.auth.getUser.mockResolvedValue({
@@ -192,6 +192,53 @@ describe('GET /api/quotes', () => {
         viewerHeartbeatCount: 3,
       },
     });
+  });
+
+  it('filters quotes by personId and returns related person/work data', async () => {
+    configureBuilder(anonSelectBuilder, {
+      data: [
+        {
+          id: 'quote-9',
+          content: '晴天总比雨天多。',
+          author: '周杰伦',
+          author_role: 'singer',
+          category: '网易云',
+          person_id: 'person-9',
+          people: {
+            id: 'person-9',
+            name: '周杰伦',
+            role: 'singer',
+          },
+          works: {
+            id: 'work-9',
+            title: '晴天',
+            work_type: 'song',
+          },
+        },
+      ],
+      count: 1,
+    });
+
+    const { GET } = await import('./index');
+    const response = await GET(
+      new Request('https://example.com/api/quotes?personId=person-9&page=1&pageSize=10'),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.items[0]).toMatchObject({
+      person: {
+        id: 'person-9',
+        name: '周杰伦',
+        role: 'singer',
+      },
+      work: {
+        id: 'work-9',
+        title: '晴天',
+        workType: 'song',
+      },
+    });
+    expect(anonSelectBuilder.eq).toHaveBeenCalledWith('person_id', 'person-9');
   });
 });
 

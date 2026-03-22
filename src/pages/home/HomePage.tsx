@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } from 'react';
+import { useEffect, useRef, useState, type UIEvent } from 'react';
 import { Link } from 'react-router-dom';
 
-import { LoadingScreen } from '@/components/common/LoadingScreen';
 import { QuoteActions } from '@/components/quote/QuoteActions';
 import { QuoteCard } from '@/components/quote/QuoteCard';
 import { ReflectionPanel } from '@/components/reflection/ReflectionPanel';
@@ -15,7 +14,7 @@ import {
   getReflections,
   type ReflectionItem,
 } from '@/services/api/reflections';
-import { fetchHitokoto, getQuotes, type QuoteListItem } from '@/services/api/quotes';
+import { fetchHitokoto, type QuoteListItem } from '@/services/api/quotes';
 import type { QuoteStyle } from '@/types/quote';
 import { exportQuoteAsImage } from '@/utils/export-image';
 
@@ -27,6 +26,7 @@ type HomeQuote = QuoteListItem & {
 };
 
 const QUOTE_STYLE_STORAGE_KEY = 'golden-home-quote-style';
+const APPEND_RETRY_LIMIT = 3;
 
 export function HomePage() {
   const { user, loading: authLoading } = useAuth();
@@ -60,27 +60,26 @@ export function HomePage() {
 
   const streamRef = useRef<HTMLDivElement>(null);
   const activeCardRef = useRef<HTMLDivElement | null>(null);
+  const quotesRef = useRef<HomeQuote[]>([]);
+  const loadingNextRef = useRef(false);
+
+  useEffect(() => {
+    quotesRef.current = quotes;
+  }, [quotes]);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError(null);
 
-    getQuotes({ page: 1, pageSize: 20 })
+    fetchHitokoto()
       .then((response) => {
         if (!active) {
           return;
         }
 
-        setQuotes(
-          response.items.map((item) => ({
-            ...item,
-            viewerState: item.viewerState ?? {
-              isFavorited: false,
-              viewerHeartbeatCount: 0,
-            },
-          })),
-        );
+        setQuotes([toHomeQuote(response.quote)]);
+        setCurrentIndex(0);
       })
       .catch(() => {
         if (active) {
@@ -131,35 +130,54 @@ export function HomePage() {
     };
   }, [reflectionOpen, currentQuote, user]);
 
-  function handleScroll(event: UIEvent<HTMLDivElement>) {
-    const container = event.currentTarget;
-    const nextIndex = Math.round(container.scrollTop / Math.max(container.clientHeight, 1));
+  async function appendNextQuote(attempt = 0) {
+    const response = await fetchHitokoto();
+    const nextQuote = toHomeQuote(response.quote);
 
-    if (nextIndex !== currentIndex && nextIndex >= 0 && nextIndex < quotes.length) {
-      setCurrentIndex(nextIndex);
+    if (quotesRef.current.some((item) => item.id === nextQuote.id)) {
+      if (attempt >= APPEND_RETRY_LIMIT) {
+        return;
+      }
+
+      await appendNextQuote(attempt + 1);
+      return;
     }
+
+    const nextIndex = quotesRef.current.length;
+    setQuotes((current) => [...current, nextQuote]);
+    setCurrentIndex(nextIndex);
   }
 
-  async function handleNextQuote() {
+  async function maybeAppendNextQuote() {
+    if (loadingNextRef.current) {
+      return;
+    }
+
+    loadingNextRef.current = true;
     setLoadingNext(true);
     setError(null);
 
     try {
-      const response = await fetchHitokoto();
-      const nextQuote: HomeQuote = {
-        ...response.quote,
-        viewerState: {
-          isFavorited: false,
-          viewerHeartbeatCount: 0,
-        },
-      };
-
-      setQuotes((current) => [...current, nextQuote]);
-      setCurrentIndex(quotes.length);
+      await appendNextQuote();
     } catch {
       setError('下一句获取失败，请稍后重试。');
     } finally {
+      loadingNextRef.current = false;
       setLoadingNext(false);
+    }
+  }
+
+  function handleScroll(event: UIEvent<HTMLDivElement>) {
+    const container = event.currentTarget;
+    const rawIndex = Math.round(container.scrollTop / Math.max(container.clientHeight, 1));
+    const nextIndex = Math.min(Math.max(rawIndex, 0), Math.max(quotes.length - 1, 0));
+
+    if (nextIndex !== currentIndex && nextIndex >= 0 && nextIndex < quotes.length) {
+      setCurrentIndex(nextIndex);
+    }
+
+    if (rawIndex >= quotes.length - 1) {
+      void maybeAppendNextQuote();
     }
   }
 
@@ -253,40 +271,39 @@ export function HomePage() {
     await exportQuoteAsImage(activeCardRef.current, `golden-${currentQuote.id}.png`);
   }
 
-  const titleCopy = useMemo(
-    () =>
-      currentQuote
-        ? `正在阅读第 ${currentIndex + 1} 句，共 ${quotes.length} 句`
-        : '滚动流会把当下这一句推到前景',
-    [currentIndex, currentQuote, quotes.length],
-  );
-
   if (authLoading || loading) {
     return (
-      <section className="space-y-4">
-        <HomeHero subtitle="滚动流会把当下这一句推到前景" />
-        <LoadingScreen />
+      <section className="relative min-h-[calc(100vh-12rem)]">
+        <div className="flex h-[calc(100vh-12rem)] items-center justify-center">
+          <div className="flex h-full w-full items-center justify-center rounded-[2.4rem] border border-stone-200/70 bg-[linear-gradient(160deg,#f7f2e8,#efe5d2)] p-10 shadow-[0_20px_50px_rgba(28,25,23,0.08)]">
+            <p className="font-serif text-2xl leading-[1.8] text-stone-500">正在接住下一句。</p>
+          </div>
+        </div>
       </section>
     );
   }
 
   return (
-    <section className="space-y-4">
-      <HomeHero subtitle={titleCopy}>
+    <section className="relative min-h-[calc(100vh-12rem)]">
+      <div className="pointer-events-none absolute inset-x-0 top-3 z-20 flex flex-col items-center gap-2 px-4">
         {loginPrompt ? (
-          <div className="mt-4 rounded-[1.5rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div className="pointer-events-auto rounded-full border border-amber-200/80 bg-amber-50/95 px-4 py-2 text-sm text-amber-900 shadow-sm backdrop-blur">
             <p>{loginPrompt}</p>
-            <Link className="mt-2 inline-block underline underline-offset-4" to="/auth/login">
+            <Link className="ml-2 inline-block underline underline-offset-4" to="/auth/login">
               去登录
             </Link>
           </div>
         ) : null}
-        {error ? <p className="mt-4 text-sm text-red-500">{error}</p> : null}
-      </HomeHero>
+        {error ? (
+          <p className="pointer-events-auto rounded-full bg-stone-900/80 px-4 py-2 text-sm text-white shadow-sm">
+            {error}
+          </p>
+        ) : null}
+      </div>
 
       <div
         ref={streamRef}
-        className="max-h-[70vh] snap-y snap-mandatory overflow-y-auto rounded-[2rem]"
+        className="h-[calc(100vh-12rem)] snap-y snap-mandatory overflow-y-auto"
         data-testid="quote-stream"
         onScroll={handleScroll}
       >
@@ -304,15 +321,12 @@ export function HomePage() {
       <QuoteActions
         heartbeatCount={currentQuote?.viewerState.viewerHeartbeatCount ?? 0}
         isFavorited={currentQuote?.viewerState.isFavorited ?? false}
-        loadingNext={loadingNext}
         onExport={handleExport}
         onFavorite={handleFavorite}
         onHeartbeat={handleHeartbeat}
-        onNextQuote={handleNextQuote}
         onOpenReflections={handleOpenReflections}
         onOpenStyleEditor={() => setStyleOpen(true)}
       />
-
       <ReflectionPanel
         draft={reflectionDraft}
         items={reflections}
@@ -333,19 +347,12 @@ export function HomePage() {
   );
 }
 
-function HomeHero({
-  subtitle,
-  children,
-}: {
-  subtitle: string;
-  children?: ReactNode;
-}) {
-  return (
-    <div className="rounded-[2rem] border border-stone-200/80 bg-[linear-gradient(135deg,#fffef8,#f3efe2)] p-6 shadow-sm">
-      <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Home</p>
-      <h2 className="mt-3 font-serif text-3xl text-stone-900">首页</h2>
-      <p className="mt-3 text-sm leading-6 text-stone-600">{subtitle}</p>
-      {children}
-    </div>
-  );
+function toHomeQuote(quote: QuoteListItem): HomeQuote {
+  return {
+    ...quote,
+    viewerState: quote.viewerState ?? {
+      isFavorited: false,
+      viewerHeartbeatCount: 0,
+    },
+  };
 }

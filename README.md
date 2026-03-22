@@ -13,11 +13,11 @@
 - Supabase migration、seed、架构文档和 Vercel 路由配置
 - 首页、分类、收藏、设置真实页面迁移
 - Firebase 依赖清理
+- `npx vercel build` 联调验证
 
 进行中：
 
-- Vercel Functions 业务接口补强
-- Vercel 生产构建联调
+- 前端分包与 bundle 体积优化
 
 ## 技术栈
 
@@ -25,6 +25,18 @@
 - TypeScript
 - Vite
 - React Router
+
+## 本地开发
+
+前端开发服务器和 `api/*` 本地函数需要分开启动：
+
+1. 启动本地 Vercel Functions：
+   `npm run dev:api`
+2. 启动前端：
+   `npm run dev`
+
+默认情况下，Vite 会把 `/api/*` 代理到 `http://127.0.0.1:3001`。
+如果你想改本地函数端口，可以先设置环境变量 `VITE_API_PROXY_TARGET`，再启动 `npm run dev`。
 - Supabase Auth
 - Supabase Postgres
 - Vercel Functions
@@ -114,6 +126,4 @@ npm run build
 
 ## 当前限制
 
-- 仍有一个 CSS `@import` 顺序告警
-- 打包产物仍有 `>500kB` 的 chunk size 告警
-- 还没有执行最终的 `npx vercel build` 联调验证
+- 打包产物仍可能出现 `>500kB` 的 chunk size 告警，建议继续做更细粒度分包

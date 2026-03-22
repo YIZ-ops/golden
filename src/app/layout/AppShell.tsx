@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom';
 
 import { BottomNav } from '@/app/layout/BottomNav';
-import { cn } from '@/utils/cn';
+import { PixelCat } from '@/components/PixelCat';
 
 export function AppShell() {
   return (
@@ -12,14 +12,14 @@ export function AppShell() {
           <div className="mt-3 flex items-end justify-between gap-4">
             <div>
               <h1 className="font-serif text-2xl text-stone-900">金句</h1>
-              <p className="mt-1 text-sm text-stone-500">Chunk 1 已完成一级路由骨架拆分</p>
+              <p className="mt-1 text-sm text-stone-500">留住今天想记住的一句话</p>
             </div>
-            <div
-              className={cn(
-                'rounded-full border border-amber-300/80 bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900',
-              )}
-            >
-              App Shell
+            <div className="flex items-center gap-3 rounded-[1.25rem] border border-stone-200/80 bg-white/80 px-3 py-2 shadow-sm">
+              <PixelCat className="text-stone-700" size={20} />
+              <div className="text-right">
+                <p className="text-[10px] uppercase tracking-[0.28em] text-stone-400">Slow Read</p>
+                <p className="mt-1 text-xs text-stone-700">慢慢读</p>
+              </div>
             </div>
           </div>
         </header>

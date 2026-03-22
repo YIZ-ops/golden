@@ -37,6 +37,27 @@ const exportState = {
   exportQuoteAsImage: vi.fn(),
 };
 
+const initialQuote = {
+  id: 'quote-3',
+  content: '第三句，写给海面。',
+  author: '作者丙',
+  source: '一言',
+};
+
+const nextQuote = {
+  id: 'quote-2',
+  content: '第二句，写给晨风。',
+  author: '作者乙',
+  source: '诗歌集',
+};
+
+const duplicateQuote = {
+  id: 'quote-3',
+  content: '第三句，写给海面。',
+  author: '作者丙',
+  source: '一言',
+};
+
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => authState,
 }));
@@ -78,45 +99,17 @@ describe('HomePage', () => {
     exportState.exportQuoteAsImage.mockReset();
 
     quotesApi.getQuotes.mockResolvedValue({
-      items: [
-        {
-          id: 'quote-1',
-          content: '第一句，写给夜色。',
-          author: '作者甲',
-          source: '散文集',
-          viewerState: {
-            isFavorited: false,
-            viewerHeartbeatCount: 0,
-          },
-        },
-        {
-          id: 'quote-2',
-          content: '第二句，写给晨风。',
-          author: '作者乙',
-          source: '诗歌集',
-          viewerState: {
-            isFavorited: true,
-            viewerHeartbeatCount: 2,
-          },
-        },
-      ],
+      items: [],
       page: 1,
       pageSize: 20,
-      total: 2,
+      total: 0,
     });
-    quotesApi.fetchHitokoto.mockResolvedValue({
-      quote: {
-        id: 'quote-3',
-        content: '第三句，写给海面。',
-        author: '作者丙',
-        source: '一言',
-      },
-    });
+    quotesApi.fetchHitokoto.mockResolvedValue({ quote: initialQuote });
     reflectionsApi.getReflections.mockResolvedValue({
       items: [
         {
           id: 'reflection-1',
-          quoteId: 'quote-2',
+          quoteId: nextQuote.id,
           userId: 'user-1',
           content: '这一句让我停下来。',
           createdAt: '2026-03-21T10:00:00.000Z',
@@ -126,7 +119,7 @@ describe('HomePage', () => {
     reflectionsApi.createReflection.mockResolvedValue({
       reflection: {
         id: 'reflection-2',
-        quoteId: 'quote-2',
+        quoteId: nextQuote.id,
         userId: 'user-1',
         content: '新的感悟',
         createdAt: '2026-03-21T11:00:00.000Z',
@@ -134,23 +127,41 @@ describe('HomePage', () => {
     });
     favoritesApi.favoriteQuote.mockResolvedValue({ favorited: true });
     favoritesApi.unfavoriteQuote.mockResolvedValue({ favorited: false });
-    heartbeatsApi.heartbeatQuote.mockResolvedValue({ quoteId: 'quote-2', count: 3 });
+    heartbeatsApi.heartbeatQuote.mockResolvedValue({ quoteId: nextQuote.id, count: 3 });
     exportState.exportQuoteAsImage.mockResolvedValue(undefined);
   });
 
-  it('loads the first quote and keeps a vertical quote stream', async () => {
+  it('loads the first quote from hitokoto and does not call getQuotes', async () => {
     renderPage();
 
-    expect(await screen.findByText('第一句，写给夜色。')).toBeInTheDocument();
-    expect(screen.getByText('第二句，写给晨风。')).toBeInTheDocument();
-    expect(quotesApi.getQuotes).toHaveBeenCalledWith({ page: 1, pageSize: 20 });
+    expect(await screen.findByText(initialQuote.content)).toBeInTheDocument();
+    expect(quotesApi.fetchHitokoto).toHaveBeenCalledTimes(1);
+    expect(quotesApi.getQuotes).not.toHaveBeenCalled();
   });
 
-  it('switches current quote on scroll and uses actions against the active card', async () => {
-    authState.user = { id: 'user-1', email: 'hello@example.com' };
+  it('does not render a next-quote button', async () => {
     renderPage();
 
-    await screen.findByText('第二句，写给晨风。');
+    await screen.findByText(initialQuote.content);
+    expect(screen.queryByRole('button', { name: '获取下一句' })).not.toBeInTheDocument();
+  });
+
+  it('renders the home page without a hero header', async () => {
+    renderPage();
+
+    await screen.findByText(initialQuote.content);
+    expect(screen.queryByRole('heading', { name: '首页' })).not.toBeInTheDocument();
+    expect(screen.queryByText('一句一句往下翻')).not.toBeInTheDocument();
+  });
+
+  it('prefetches another hitokoto when the reader reaches the end of the stream', async () => {
+    quotesApi.fetchHitokoto
+      .mockResolvedValueOnce({ quote: initialQuote })
+      .mockResolvedValueOnce({ quote: nextQuote });
+
+    renderPage();
+
+    await screen.findByText(initialQuote.content);
     const stream = screen.getByTestId('quote-stream');
 
     Object.defineProperty(stream, 'clientHeight', {
@@ -163,42 +174,73 @@ describe('HomePage', () => {
     });
 
     fireEvent.scroll(stream);
-    fireEvent.click(screen.getByRole('button', { name: '收藏当前金句' }));
-    fireEvent.click(screen.getByRole('button', { name: '心动当前金句' }));
 
-    await waitFor(() => {
-      expect(favoritesApi.unfavoriteQuote).toHaveBeenCalledWith('quote-2');
-      expect(heartbeatsApi.heartbeatQuote).toHaveBeenCalledWith('quote-2');
+    expect(await screen.findByText(nextQuote.content)).toBeInTheDocument();
+    expect(quotesApi.fetchHitokoto).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries when hitokoto returns a quote already shown in the current stream', async () => {
+    quotesApi.fetchHitokoto
+      .mockResolvedValueOnce({ quote: initialQuote })
+      .mockResolvedValueOnce({ quote: duplicateQuote })
+      .mockResolvedValueOnce({ quote: nextQuote });
+
+    renderPage();
+
+    await screen.findByText(initialQuote.content);
+    const stream = screen.getByTestId('quote-stream');
+
+    Object.defineProperty(stream, 'clientHeight', {
+      configurable: true,
+      value: 600,
     });
+    Object.defineProperty(stream, 'scrollTop', {
+      configurable: true,
+      value: 600,
+    });
+
+    fireEvent.scroll(stream);
+
+    expect(await screen.findByText(nextQuote.content)).toBeInTheDocument();
+    expect(quotesApi.fetchHitokoto).toHaveBeenCalledTimes(3);
   });
 
   it('shows an inline auth gate instead of redirecting for protected actions', async () => {
     renderPage();
 
-    await screen.findByText('第一句，写给夜色。');
+    await screen.findByText(initialQuote.content);
     fireEvent.click(screen.getByRole('button', { name: '收藏当前金句' }));
 
     expect(await screen.findByText('登录后才能收藏、心动或记录感悟。')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '去登录' })).toBeInTheDocument();
   });
 
-  it('fetches the next quote and appends it into the stream', async () => {
+  it('switches current quote on scroll and uses actions against the active card', async () => {
+    authState.user = { id: 'user-1', email: 'hello@example.com' };
+    quotesApi.fetchHitokoto
+      .mockResolvedValueOnce({ quote: initialQuote })
+      .mockResolvedValueOnce({ quote: nextQuote });
+
     renderPage();
 
-    await screen.findByText('第一句，写给夜色。');
-    fireEvent.click(screen.getByRole('button', { name: '获取下一句' }));
+    await scrollToEnd();
+    fireEvent.click(screen.getByRole('button', { name: '收藏当前金句' }));
+    fireEvent.click(screen.getByRole('button', { name: '心动当前金句' }));
 
     await waitFor(() => {
-      expect(quotesApi.fetchHitokoto).toHaveBeenCalled();
+      expect(favoritesApi.favoriteQuote).toHaveBeenCalledWith(nextQuote.id);
+      expect(heartbeatsApi.heartbeatQuote).toHaveBeenCalledWith(nextQuote.id);
     });
-    expect(await screen.findByText('第三句，写给海面。')).toBeInTheDocument();
   });
 
-  it('loads and submits reflections for the active quote', async () => {
-    authState.user = { id: 'user-1', email: 'hello@example.com' };
+  it('keeps the current stream readable when auto-prefetch fails', async () => {
+    quotesApi.fetchHitokoto
+      .mockResolvedValueOnce({ quote: initialQuote })
+      .mockRejectedValueOnce(new Error('服务异常'));
+
     renderPage();
 
-    await screen.findByText('第二句，写给晨风。');
+    await screen.findByText(initialQuote.content);
     const stream = screen.getByTestId('quote-stream');
 
     Object.defineProperty(stream, 'clientHeight', {
@@ -211,10 +253,24 @@ describe('HomePage', () => {
     });
 
     fireEvent.scroll(stream);
+
+    expect(await screen.findByText(initialQuote.content)).toBeInTheDocument();
+    expect(await screen.findByText('下一句获取失败，请稍后重试。')).toBeInTheDocument();
+  });
+
+  it('loads and submits reflections for the active quote', async () => {
+    authState.user = { id: 'user-1', email: 'hello@example.com' };
+    quotesApi.fetchHitokoto
+      .mockResolvedValueOnce({ quote: initialQuote })
+      .mockResolvedValueOnce({ quote: nextQuote });
+
+    renderPage();
+
+    await scrollToEnd();
     fireEvent.click(screen.getByRole('button', { name: '打开感悟面板' }));
 
     await waitFor(() => {
-      expect(reflectionsApi.getReflections).toHaveBeenCalledWith('quote-2');
+      expect(reflectionsApi.getReflections).toHaveBeenCalledWith(nextQuote.id);
     });
     expect(await screen.findByText('这一句让我停下来。')).toBeInTheDocument();
 
@@ -225,7 +281,7 @@ describe('HomePage', () => {
 
     await waitFor(() => {
       expect(reflectionsApi.createReflection).toHaveBeenCalledWith({
-        quoteId: 'quote-2',
+        quoteId: nextQuote.id,
         content: '新的感悟',
       });
     });
@@ -235,7 +291,7 @@ describe('HomePage', () => {
   it('updates the current card style and exports the active card', async () => {
     renderPage();
 
-    await screen.findByText('第一句，写给夜色。');
+    await screen.findByText(initialQuote.content);
     fireEvent.click(screen.getByRole('button', { name: '打开样式面板' }));
     fireEvent.change(screen.getByLabelText('字号大小'), {
       target: { value: '30' },
@@ -248,7 +304,40 @@ describe('HomePage', () => {
       expect(exportState.exportQuoteAsImage).toHaveBeenCalled();
     });
   });
+
+  it('renders a five-action toolbar without visible text labels', async () => {
+    renderPage();
+
+    await screen.findByText(initialQuote.content);
+    expect(screen.getByRole('button', { name: '心动当前金句' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '收藏当前金句' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '打开感悟面板' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '打开样式面板' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '导出当前金句' })).toBeInTheDocument();
+    expect(screen.queryByText('心动')).not.toBeInTheDocument();
+    expect(screen.queryByText('收藏')).not.toBeInTheDocument();
+    expect(screen.queryByText('感悟')).not.toBeInTheDocument();
+    expect(screen.queryByText('样式')).not.toBeInTheDocument();
+    expect(screen.queryByText('导出')).not.toBeInTheDocument();
+  });
 });
+
+async function scrollToEnd() {
+  await screen.findByText(initialQuote.content);
+  const stream = screen.getByTestId('quote-stream');
+
+  Object.defineProperty(stream, 'clientHeight', {
+    configurable: true,
+    value: 600,
+  });
+  Object.defineProperty(stream, 'scrollTop', {
+    configurable: true,
+    value: 600,
+  });
+
+  fireEvent.scroll(stream);
+  await screen.findByText(nextQuote.content);
+}
 
 function renderPage() {
   return render(

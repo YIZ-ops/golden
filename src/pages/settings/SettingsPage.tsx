@@ -81,18 +81,22 @@ export function SettingsPage() {
   }
 
   if (loading) {
-    return <PageCard title="设置">正在确认登录状态...</PageCard>;
+    return (
+      <PageCard eyebrow="Settings" title="设置">
+        正在确认登录状态...
+      </PageCard>
+    );
   }
 
   if (!user) {
     return (
       <section className="space-y-4">
-        <PageCard title="设置">
+        <PageCard eyebrow="Settings" title="设置">
           当前未登录。登录后可同步收藏、感悟和主题偏好。
         </PageCard>
 
         <div className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Auth</p>
+          <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Account</p>
           <h3 className="mt-3 font-serif text-2xl text-stone-900">账号入口</h3>
           <div className="mt-5 grid gap-3">
             <Link className="rounded-2xl bg-stone-900 px-4 py-3 text-center text-sm text-white" to="/auth/login">
@@ -115,10 +119,10 @@ export function SettingsPage() {
 
   return (
     <section className="space-y-4">
-      <PageCard title="设置">账号资料、主题偏好和登录态管理已经迁到新页面。</PageCard>
+      <PageCard eyebrow="Settings" title="设置">管理账号、主题和同步偏好。</PageCard>
 
       <div className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
-        <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Profile</p>
+        <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Account</p>
         {profile ? (
           <div className="mt-4 flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-4">
@@ -144,7 +148,7 @@ export function SettingsPage() {
       </div>
 
       <div className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
-        <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Theme</p>
+        <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Preference</p>
         <h3 className="mt-3 font-serif text-2xl text-stone-900">主题偏好</h3>
         <div className="mt-5 flex flex-wrap gap-3">
           {THEME_OPTIONS.map((option) => {
@@ -173,10 +177,18 @@ export function SettingsPage() {
   );
 }
 
-function PageCard({ title, children }: { title: string; children: ReactNode }) {
+function PageCard({
+  eyebrow,
+  title,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  children: ReactNode;
+}) {
   return (
     <div className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
-      <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Route</p>
+      <p className="text-xs uppercase tracking-[0.35em] text-stone-400">{eyebrow}</p>
       <h2 className="mt-3 font-serif text-3xl text-stone-900">{title}</h2>
       <p className="mt-3 text-sm leading-6 text-stone-600">{children}</p>
     </div>

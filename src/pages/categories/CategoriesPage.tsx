@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { CategoryFilters } from '@/pages/categories/components/CategoryFilters';
 import { CategoryQuoteGrid } from '@/pages/categories/components/CategoryQuoteGrid';
+import { getPeople } from '@/services/api/people';
 import { fetchHitokoto, getQuotes, type QuoteListItem } from '@/services/api/quotes';
+import type { PersonListItem } from '@/types/person';
 import type { Quote } from '@/types/quote';
 
 const PAGE_SIZE = 20;
@@ -11,11 +13,46 @@ export function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [authorOffset, setAuthorOffset] = useState(0);
   const [singerOffset, setSingerOffset] = useState(0);
+  const [authors, setAuthors] = useState<PersonListItem[]>([]);
+  const [singers, setSingers] = useState<PersonListItem[]>([]);
   const [items, setItems] = useState<Array<QuoteListItem | Quote>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [resultsTitle, setResultsTitle] = useState('结果区');
-  const [resultsDescription, setResultsDescription] = useState('点击上方入口后，在这里查看命中的金句。');
+  const [resultsTitle, setResultsTitle] = useState('');
+  const [resultsDescription, setResultsDescription] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPeople() {
+      try {
+        const [authorResponse, singerResponse] = await Promise.all([
+          getPeople({ role: 'author', keyword: searchQuery, page: 1, pageSize: 20 }),
+          getPeople({ role: 'singer', keyword: searchQuery, page: 1, pageSize: 20 }),
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        setAuthors(authorResponse.items);
+        setSingers(singerResponse.items);
+      } catch {
+        if (cancelled) {
+          return;
+        }
+
+        setAuthors([]);
+        setSingers([]);
+      }
+    }
+
+    void loadPeople();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchQuery]);
 
   async function handleCategorySelect(categoryId: string) {
     setLoading(true);
@@ -34,16 +71,15 @@ export function CategoriesPage() {
     }
   }
 
-  async function handleAuthorSelect(author: string) {
+  async function handleAuthorSelect(author: PersonListItem) {
     setLoading(true);
     setError(null);
-    setResultsTitle(`作者：${author}`);
+    setResultsTitle(`作者：${author.name}`);
     setResultsDescription('以下结果来自当前作者的服务端查询。');
 
     try {
       const response = await getQuotes({
-        authorRole: 'author',
-        author,
+        personId: author.id,
         page: 1,
         pageSize: PAGE_SIZE,
       });
@@ -56,16 +92,15 @@ export function CategoriesPage() {
     }
   }
 
-  async function handleSingerSelect(singer: string) {
+  async function handleSingerSelect(singer: PersonListItem) {
     setLoading(true);
     setError(null);
-    setResultsTitle(`歌手：${singer}`);
+    setResultsTitle(`歌手：${singer.name}`);
     setResultsDescription('以下结果来自当前歌手的服务端查询。');
 
     try {
       const response = await getQuotes({
-        authorRole: 'singer',
-        author: singer,
+        personId: singer.id,
         page: 1,
         pageSize: PAGE_SIZE,
       });
@@ -80,15 +115,8 @@ export function CategoriesPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
-        <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Route</p>
-        <h2 className="mt-3 font-serif text-3xl text-stone-900">分类</h2>
-        <p className="mt-3 text-sm leading-6 text-stone-600">
-          这里已经开始接管分类浏览、作者筛选、歌手筛选和结果展示，不再只是占位路由。
-        </p>
-      </div>
-
       <CategoryFilters
+        authors={authors}
         authorOffset={authorOffset}
         loading={loading}
         onAuthorSelect={handleAuthorSelect}
@@ -98,6 +126,7 @@ export function CategoriesPage() {
         onSearchChange={setSearchQuery}
         onSingerSelect={handleSingerSelect}
         searchQuery={searchQuery}
+        singers={singers}
         singerOffset={singerOffset}
       />
 

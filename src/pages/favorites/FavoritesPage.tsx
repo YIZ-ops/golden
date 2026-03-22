@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
+import { StarBottle } from '@/components/StarBottle';
 import { useAuth } from '@/hooks/useAuth';
 import { ApiClientError } from '@/services/api/client';
 import { getFavorites, type FavoriteQuote } from '@/services/api/favorites';
@@ -63,13 +64,17 @@ export function FavoritesPage() {
   }, [items, selectedCategory]);
 
   if (loading) {
-    return <PageCard title="收藏">正在确认登录状态...</PageCard>;
+    return (
+      <PageCard eyebrow="Favorites" title="收藏">
+        正在确认登录状态...
+      </PageCard>
+    );
   }
 
   if (!user) {
     return (
       <section className="space-y-4">
-        <PageCard title="收藏">登录后即可同步你的收藏金句</PageCard>
+        <PageCard eyebrow="Favorites" title="收藏">登录后即可把喜欢的句子留在收藏夹里。</PageCard>
         <div className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
           <Link className="rounded-2xl bg-stone-900 px-4 py-3 text-sm text-white" to="/auth/login">
             去登录
@@ -81,12 +86,31 @@ export function FavoritesPage() {
 
   return (
     <section className="space-y-4">
-      <PageCard title="收藏">收藏列表已经开始使用新的 `/api/favorites` 接口读取。</PageCard>
+      <PageCard eyebrow="Favorites" title="收藏">把反复想读的句子留在这里，按分类慢慢翻。</PageCard>
+
+      <div className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Shelf</p>
+            <h3 className="mt-3 font-serif text-2xl text-stone-900">收藏夹概览</h3>
+            <p className="mt-2 text-sm text-stone-500">
+              当前分类：{selectedCategory}，共 {filteredItems.length} 条。
+            </p>
+          </div>
+          <StarBottle
+            color="#f59e0b"
+            count={filteredItems.length}
+            isDarkMode={false}
+            label={selectedCategory === '全部' ? '全部收藏' : selectedCategory}
+            shape="vial"
+          />
+        </div>
+      </div>
 
       <div className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-stone-400">View</p>
+            <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Library</p>
             <h3 className="mt-3 font-serif text-2xl text-stone-900">我的收藏</h3>
           </div>
           <button
@@ -123,7 +147,7 @@ export function FavoritesPage() {
         {error ? <p className="mt-5 text-sm text-red-500">{error}</p> : null}
 
         {!error && filteredItems.length === 0 ? (
-          <p className="mt-6 text-sm text-stone-500">当前分类下还没有收藏内容。</p>
+          <p className="mt-6 text-sm text-stone-500">这个分类里还没有留下来的句子。</p>
         ) : null}
 
         <div className={viewMode === 'gallery' ? 'mt-6 grid gap-4' : 'mt-6 space-y-3'}>
@@ -152,10 +176,18 @@ export function FavoritesPage() {
   );
 }
 
-function PageCard({ title, children }: { title: string; children: ReactNode }) {
+function PageCard({
+  eyebrow,
+  title,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  children: ReactNode;
+}) {
   return (
     <div className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
-      <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Route</p>
+      <p className="text-xs uppercase tracking-[0.35em] text-stone-400">{eyebrow}</p>
       <h2 className="mt-3 font-serif text-3xl text-stone-900">{title}</h2>
       <p className="mt-3 text-sm leading-6 text-stone-600">{children}</p>
     </div>

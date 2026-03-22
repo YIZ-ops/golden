@@ -46,7 +46,7 @@ describe('FavoritesPage', () => {
   it('shows an auth gate when the user is anonymous', () => {
     renderPage(<FavoritesPage />);
 
-    expect(screen.getByText('登录后即可同步你的收藏金句')).toBeInTheDocument();
+    expect(screen.getByText('登录后即可把喜欢的句子留在收藏夹里。')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '去登录' })).toBeInTheDocument();
   });
 

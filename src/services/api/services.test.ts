@@ -3,6 +3,7 @@ import {
   fetchHitokoto,
   getQuotes,
 } from '@/services/api/quotes';
+import { getPeople } from '@/services/api/people';
 import {
   favoriteQuote,
   getFavorites,
@@ -28,13 +29,27 @@ describe('api service modules', () => {
       category: '动画',
       authorRole: 'singer',
       author: '林俊杰',
+      personId: 'person-1',
       keyword: '夜空',
       page: 2,
       pageSize: 12,
     });
 
     expect(apiRequest).toHaveBeenCalledWith(
-      '/api/quotes?category=%E5%8A%A8%E7%94%BB&authorRole=singer&author=%E6%9E%97%E4%BF%8A%E6%9D%B0&keyword=%E5%A4%9C%E7%A9%BA&page=2&pageSize=12',
+      '/api/quotes?category=%E5%8A%A8%E7%94%BB&authorRole=singer&author=%E6%9E%97%E4%BF%8A%E6%9D%B0&personId=person-1&keyword=%E5%A4%9C%E7%A9%BA&page=2&pageSize=12',
+    );
+  });
+
+  it('maps getPeople filters into query params', async () => {
+    await getPeople({
+      role: 'author',
+      keyword: '鲁',
+      page: 1,
+      pageSize: 4,
+    });
+
+    expect(apiRequest).toHaveBeenCalledWith(
+      '/api/people?role=author&keyword=%E9%B2%81&page=1&pageSize=4',
     );
   });
 

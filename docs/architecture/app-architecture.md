@@ -2,7 +2,7 @@
 
 ## 当前架构
 
-截至 2026-03-21，项目已经从单文件 `App.tsx` 切出了基础应用壳层：
+截至 2026-03-21，项目已经完成从 Firebase 单文件实现向 `Supabase Auth + Postgres + Vercel Functions` 的主链路迁移：
 
 - 前端框架：`Vite + React 19 + TypeScript`
 - 页面路由：`React Router`
@@ -27,10 +27,14 @@
   - 按页面拆分为独立文件
 - `src/services/supabase/*`
   - 浏览器端 Supabase client 与 session 辅助
+- `src/services/api/*`
+  - 前端统一业务 API client
+- `api/*`
+  - Vercel Functions BFF，负责业务接口与身份校验
 - `src/hooks/useAuth.ts`
   - 统一封装账号密码登录、注册、忘记密码和重置密码
 
-旧的 Firebase 单文件实现已保存在 [LegacyApp.tsx](/C:/Users/14798/Desktop/金/src/legacy/LegacyApp.tsx)，并被排除出当前编译范围，仅作为迁移参考。
+旧的 Firebase 实现、配置和遗留依赖已经从项目中移除。
 
 ## 目标架构
 
@@ -82,7 +86,7 @@
 
 ## API 面
 
-规划中的核心接口如下：
+当前已经落地的核心接口如下：
 
 - `GET /api/quotes`
 - `POST /api/quotes/fetch-hitokoto`
@@ -123,7 +127,7 @@
 
 ## 迁移路径
 
-本次重构按以下顺序推进：
+本次重构按以下顺序完成：
 
 1. 拆出路由壳层和四个一级页面
 2. 补齐测试基建与路由 smoke test
@@ -135,15 +139,15 @@
 
 ## 当前已完成
 
-- 一级路由和应用壳层已拆出
-- Vitest + React Testing Library 已接入
-- 路由 smoke test 已通过
-- 账号密码认证页面已落盘并通过页面测试
-- `.env.example` 已切换为 Supabase 所需变量
+- 一级路由、应用壳层与认证页面组已拆出
+- 首页、分类、收藏、设置四个一级页面已迁移到独立页面文件
+- `Vitest + React Testing Library` 测试基建已接入，路由、页面与 API 层测试已覆盖
+- 账号密码注册、登录、忘记密码、重置密码链路已接通
+- `quotes / favorites / heartbeats / reflections / profile` 对应的 Vercel Functions 已落地
+- Supabase migration、seed、环境变量模板和部署配置已落盘
+- Firebase 依赖与遗留配置已清理
 
-## 当前未完成
+## 当前剩余事项
 
-- Supabase migration 尚未执行到真实环境
-- `Vercel Functions` 业务 API 还未全部落盘
-- 首页、分类、收藏、设置的真实业务逻辑仍待从旧实现继续迁移
-- Firebase 依赖尚未从项目中彻底移除
+- 持续优化前端分包体积，降低构建中的大 chunk 告警
+- 在真实 Supabase 环境持续执行 migration、seed 与回归验证

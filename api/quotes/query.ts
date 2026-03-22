@@ -6,6 +6,7 @@ export interface QuoteQueryParams {
   category: string | null;
   author: string | null;
   authorRole: AuthorRole | null;
+  personId: string | null;
   keyword: string | null;
   page: number;
   pageSize: number;
@@ -25,6 +26,7 @@ export function parseQuoteQuery(url: URL): QuoteQueryParams | QueryValidationErr
   const category = readValue(url.searchParams.get('category'));
   const author = readValue(url.searchParams.get('author'));
   const authorRoleValue = readValue(url.searchParams.get('authorRole'));
+  const personId = readValue(url.searchParams.get('personId'));
   const keyword = readValue(url.searchParams.get('keyword'));
   const pageValue = readValue(url.searchParams.get('page')) ?? '1';
   const pageSizeValue = readValue(url.searchParams.get('pageSize')) ?? '20';
@@ -77,6 +79,7 @@ export function parseQuoteQuery(url: URL): QuoteQueryParams | QueryValidationErr
     category,
     author,
     authorRole,
+    personId,
     keyword,
     page,
     pageSize,

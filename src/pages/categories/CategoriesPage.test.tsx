@@ -3,10 +3,15 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 import { CategoriesPage } from '@/pages/categories/CategoriesPage';
+import type { PersonListItem } from '@/types/person';
 
 const quotesApi = {
   getQuotes: vi.fn(),
   fetchHitokoto: vi.fn(),
+};
+
+const peopleApi = {
+  getPeople: vi.fn(),
 };
 
 vi.mock('@/services/api/quotes', () => ({
@@ -14,20 +19,51 @@ vi.mock('@/services/api/quotes', () => ({
   fetchHitokoto: (...args: unknown[]) => quotesApi.fetchHitokoto(...args),
 }));
 
+vi.mock('@/services/api/people', () => ({
+  getPeople: (...args: unknown[]) => peopleApi.getPeople(...args),
+}));
+
+const AUTHOR_RESULTS: PersonListItem[] = [
+  {
+    id: 'person-author-luxun',
+    name: '鲁迅',
+    role: 'author',
+    quoteCount: 12,
+  },
+];
+
+const SINGER_RESULTS: PersonListItem[] = [
+  {
+    id: 'person-singer-jay',
+    name: '周杰伦',
+    role: 'singer',
+    quoteCount: 8,
+  },
+];
+
 describe('CategoriesPage', () => {
   beforeEach(() => {
     quotesApi.getQuotes.mockReset();
     quotesApi.fetchHitokoto.mockReset();
+    peopleApi.getPeople.mockReset();
+    peopleApi.getPeople.mockImplementation(async (params?: { role?: string }) => ({
+      items: params?.role === 'singer' ? SINGER_RESULTS : AUTHOR_RESULTS,
+      page: 1,
+      pageSize: 4,
+      total: 1,
+    }));
   });
 
-  it('filters category, author, and singer entries via search', () => {
+  it('filters category, author, and singer entries via search', async () => {
     renderPage(<CategoriesPage />);
+
+    expect(await screen.findByRole('button', { name: '鲁迅' })).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('搜索分类、作者或歌手'), {
       target: { value: '周杰伦' },
     });
 
-    expect(screen.getByRole('button', { name: '周杰伦' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: '周杰伦' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '鲁迅' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '动画' })).not.toBeInTheDocument();
   });
@@ -49,12 +85,11 @@ describe('CategoriesPage', () => {
 
     renderPage(<CategoriesPage />);
 
-    fireEvent.click(screen.getByRole('button', { name: '鲁迅' }));
+    fireEvent.click(await screen.findByRole('button', { name: '鲁迅' }));
 
     await waitFor(() => {
       expect(quotesApi.getQuotes).toHaveBeenCalledWith({
-        authorRole: 'author',
-        author: '鲁迅',
+        personId: 'person-author-luxun',
         page: 1,
         pageSize: 20,
       });
@@ -79,12 +114,11 @@ describe('CategoriesPage', () => {
 
     renderPage(<CategoriesPage />);
 
-    fireEvent.click(screen.getByRole('button', { name: '周杰伦' }));
+    fireEvent.click(await screen.findByRole('button', { name: '周杰伦' }));
 
     await waitFor(() => {
       expect(quotesApi.getQuotes).toHaveBeenCalledWith({
-        authorRole: 'singer',
-        author: '周杰伦',
+        personId: 'person-singer-jay',
         page: 1,
         pageSize: 20,
       });
@@ -117,9 +151,19 @@ describe('CategoriesPage', () => {
 
     renderPage(<CategoriesPage />);
 
-    fireEvent.click(screen.getByRole('button', { name: '鲁迅' }));
+    fireEvent.click(await screen.findByRole('button', { name: '鲁迅' }));
 
     expect(await screen.findByText('加载金句失败，请稍后重试。')).toBeInTheDocument();
+  });
+
+  it('removes the discover and matches header cards', async () => {
+    renderPage(<CategoriesPage />);
+
+    await screen.findByRole('button', { name: '鲁迅' });
+
+    expect(screen.queryByText('Discover')).not.toBeInTheDocument();
+    expect(screen.queryByText('Matches')).not.toBeInTheDocument();
+    expect(screen.queryByText('从一个入口开始')).not.toBeInTheDocument();
   });
 });
 

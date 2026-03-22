@@ -6,6 +6,7 @@ export interface GetQuotesParams {
   category?: string;
   authorRole?: 'author' | 'singer' | 'unknown';
   author?: string;
+  personId?: string;
   keyword?: string;
   page?: number;
   pageSize?: number;

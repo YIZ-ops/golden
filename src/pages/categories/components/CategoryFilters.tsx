@@ -1,4 +1,5 @@
-import { AUTHORS, HITOKOTO_CATEGORIES, SINGERS } from '@/constants/categories';
+import { HITOKOTO_CATEGORIES } from '@/constants/categories';
+import type { PersonListItem } from '@/types/person';
 
 type FilterSectionItem = {
   id: string;
@@ -7,13 +8,15 @@ type FilterSectionItem = {
 
 interface CategoryFiltersProps {
   searchQuery: string;
+  authors: PersonListItem[];
   authorOffset: number;
+  singers: PersonListItem[];
   singerOffset: number;
   loading: boolean;
   onSearchChange: (value: string) => void;
   onCategorySelect: (categoryId: string) => void;
-  onAuthorSelect: (authorName: string) => void;
-  onSingerSelect: (singerName: string) => void;
+  onAuthorSelect: (author: PersonListItem) => void;
+  onSingerSelect: (singer: PersonListItem) => void;
   onRotateAuthors: () => void;
   onRotateSingers: () => void;
 }
@@ -22,7 +25,9 @@ const ITEMS_PER_PAGE = 4;
 
 export function CategoryFilters({
   searchQuery,
+  authors,
   authorOffset,
+  singers,
   singerOffset,
   loading,
   onSearchChange,
@@ -39,12 +44,12 @@ export function CategoryFilters({
       item.name.toLowerCase().includes(keyword) ||
       item.description.toLowerCase().includes(keyword),
   );
-  const authors = paginateItems(
-    AUTHORS.filter((item) => !keyword || item.name.toLowerCase().includes(keyword)),
+  const authorItems = paginateItems(
+    authors.filter((item) => !keyword || item.name.toLowerCase().includes(keyword)),
     authorOffset,
   );
-  const singers = paginateItems(
-    SINGERS.filter((item) => !keyword || item.name.toLowerCase().includes(keyword)),
+  const singerItems = paginateItems(
+    singers.filter((item) => !keyword || item.name.toLowerCase().includes(keyword)),
     singerOffset,
   );
 
@@ -53,7 +58,7 @@ export function CategoryFilters({
       <section className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
         <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Search</p>
         <h3 className="mt-3 font-serif text-2xl text-stone-900">分类导航</h3>
-        <p className="mt-2 text-sm text-stone-500">搜索分类、作者或歌手，然后直接在当前页查看结果。</p>
+        <p className="mt-2 text-sm text-stone-500">搜索分类、作者或歌手，然后直接在当前页继续往下读。</p>
         <div className="mt-5">
           <label className="block">
             <span className="sr-only">搜索分类、作者或歌手</span>
@@ -73,23 +78,23 @@ export function CategoryFilters({
         items={categories}
         onSelect={(item) => onCategorySelect(item.id)}
         title="一言分类"
-        subtitle="点击后从一言接口获取一句新的金句"
+        subtitle="点一下，拉一条新的句子进来"
         disabled={loading}
       />
       <FilterSection
-        items={authors}
-        onSelect={(item) => onAuthorSelect(item.name)}
+        items={authorItems}
+        onSelect={(item) => onAuthorSelect(item as PersonListItem)}
         title="作者"
-        subtitle="点击后展示该作者相关金句"
+        subtitle="按作者把相关句子集中找出来"
         actionLabel="换一换作者"
         onAction={onRotateAuthors}
         disabled={loading}
       />
       <FilterSection
-        items={singers}
-        onSelect={(item) => onSingerSelect(item.name)}
+        items={singerItems}
+        onSelect={(item) => onSingerSelect(item as PersonListItem)}
         title="歌手"
-        subtitle="点击后展示该歌手相关金句"
+        subtitle="按歌手去翻歌词和相关摘句"
         actionLabel="换一换歌手"
         onAction={onRotateSingers}
         disabled={loading}
