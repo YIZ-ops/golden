@@ -1,4 +1,4 @@
-import { unauthorized } from "./http";
+import { unauthorized } from "./http.js";
 
 export interface AuthFailure {
   ok: false;

@@ -1,8 +1,8 @@
-import { createUnauthorizedErrorResponse, getOptionalBearerToken, getUserIdFromJwt, isAuthFailure } from "../_lib/auth";
-import { badRequest, internalError, successResponse, unauthorized } from "../_lib/http";
-import { createAnonServerClient, createUserServerClient } from "../_lib/supabase";
-import { getViewerStateMap } from "./viewer-state";
-import { isQueryValidationError, parseQuoteQuery } from "./query";
+import { createUnauthorizedErrorResponse, getOptionalBearerToken, getUserIdFromJwt, isAuthFailure } from "../_lib/auth.js";
+import { badRequest, internalError, successResponse, unauthorized } from "../_lib/http.js";
+import { createAnonServerClient, createUserServerClient } from "../_lib/supabase.js";
+import { getViewerStateMap } from "./viewer-state.js";
+import { isQueryValidationError, parseQuoteQuery } from "./query.js";
 
 interface QuoteRow {
   id: string;

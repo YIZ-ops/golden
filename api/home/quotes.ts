@@ -1,8 +1,8 @@
-import { createUnauthorizedErrorResponse, getOptionalBearerToken, getUserIdFromJwt, isAuthFailure } from "../_lib/auth";
-import { badRequest, internalError, successResponse, unauthorized } from "../_lib/http";
-import { createAnonServerClient, createUserServerClient } from "../_lib/supabase";
-import { normalizeQuoteRecord, type CanonicalQuoteRow } from "../quotes/ingest";
-import { getViewerStateMap } from "../quotes/viewer-state";
+import { createUnauthorizedErrorResponse, getOptionalBearerToken, getUserIdFromJwt, isAuthFailure } from "../_lib/auth.js";
+import { badRequest, internalError, successResponse, unauthorized } from "../_lib/http.js";
+import { createAnonServerClient, createUserServerClient } from "../_lib/supabase.js";
+import { normalizeQuoteRecord, type CanonicalQuoteRow } from "../quotes/ingest.js";
+import { getViewerStateMap } from "../quotes/viewer-state.js";
 
 interface QuoteRow extends CanonicalQuoteRow {}
 

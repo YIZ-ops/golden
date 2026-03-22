@@ -1,6 +1,6 @@
-import { createUnauthorizedErrorResponse, getUserIdFromJwt, isAuthFailure, requireBearerToken } from "../_lib/auth";
-import { badRequest, internalError, notFound, successResponse, unauthorized } from "../_lib/http";
-import { createUserServerClient } from "../_lib/supabase";
+import { createUnauthorizedErrorResponse, getUserIdFromJwt, isAuthFailure, requireBearerToken } from "../_lib/auth.js";
+import { badRequest, internalError, notFound, successResponse, unauthorized } from "../_lib/http.js";
+import { createUserServerClient } from "../_lib/supabase.js";
 
 export async function GET(request: Request) {
   try {

@@ -1,7 +1,7 @@
-import { HITOKOTO_CATEGORIES } from '@/constants/categories';
+import { HITOKOTO_CATEGORIES } from "@/constants/categories";
 
-import { ingestHitokotoQuote } from './ingest';
-import { badRequest, internalError, successResponse } from '../_lib/http';
+import { ingestHitokotoQuote } from "./ingest.js";
+import { badRequest, internalError, successResponse } from "../_lib/http.js";
 
 const validCategoryIds = new Set(HITOKOTO_CATEGORIES.map((item) => item.id));
 
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const category = readCategory(body.category);
 
     if (category && !validCategoryIds.has(category)) {
-      return badRequest('category 参数无效。', 'INVALID_HITOKOTO_CATEGORY');
+      return badRequest("category 参数无效。", "INVALID_HITOKOTO_CATEGORY");
     }
 
     const quote = await ingestHitokotoQuote(category);
@@ -24,8 +24,8 @@ export async function POST(request: Request) {
       return error;
     }
 
-    console.error('POST /api/quotes/fetch-hitokoto failed', error);
-    return internalError('获取一言失败。', 'FETCH_HITOKOTO_FAILED');
+    console.error("POST /api/quotes/fetch-hitokoto failed", error);
+    return internalError("获取一言失败。", "FETCH_HITOKOTO_FAILED");
   }
 }
 
@@ -38,5 +38,5 @@ async function readBody(request: Request): Promise<{ category?: unknown }> {
 }
 
 function readCategory(value: unknown) {
-  return typeof value === 'string' && value.trim() ? value.trim() : null;
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }

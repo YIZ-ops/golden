@@ -1,11 +1,11 @@
-import { badRequest, internalError, successResponse } from '../_lib/http';
-import { createAnonServerClient } from '../_lib/supabase';
-import { isPeopleQueryValidationError, parsePeopleQuery } from './query';
+import { badRequest, internalError, successResponse } from "../_lib/http.js";
+import { createAnonServerClient } from "../_lib/supabase.js";
+import { isPeopleQueryValidationError, parsePeopleQuery } from "./query.js";
 
 interface PersonRow {
   id: string;
   name: string;
-  role: 'author' | 'singer';
+  role: "author" | "singer";
 }
 
 interface QuotePersonRow {
@@ -24,17 +24,14 @@ export async function GET(request: Request) {
     const rangeStart = (parsed.page - 1) * parsed.pageSize;
     const rangeEnd = rangeStart + parsed.pageSize - 1;
 
-    let query = client
-      .from('people')
-      .select('id, name, role', { count: 'exact' })
-      .order('name', { ascending: true });
+    let query = client.from("people").select("id, name, role", { count: "exact" }).order("name", { ascending: true });
 
     if (parsed.role) {
-      query = query.eq('role', parsed.role);
+      query = query.eq("role", parsed.role);
     }
 
     if (parsed.keyword) {
-      query = query.ilike('name', `%${parsed.keyword}%`);
+      query = query.ilike("name", `%${parsed.keyword}%`);
     }
 
     const { data, count, error } = await query.range(rangeStart, rangeEnd);
@@ -44,7 +41,7 @@ export async function GET(request: Request) {
     }
 
     const people = (data ?? []) as PersonRow[];
-    const { data: quoteRows, error: quoteError } = await client.from('quotes').select('person_id');
+    const { data: quoteRows, error: quoteError } = await client.from("quotes").select("person_id");
 
     if (quoteError) {
       throw quoteError;
@@ -68,7 +65,7 @@ export async function GET(request: Request) {
         quoteCount: quoteCounts.get(item.id) ?? 0,
       }))
       .filter((item) => item.quoteCount > 0)
-      .sort((left, right) => right.quoteCount - left.quoteCount || left.name.localeCompare(right.name, 'zh-CN'));
+      .sort((left, right) => right.quoteCount - left.quoteCount || left.name.localeCompare(right.name, "zh-CN"));
 
     return successResponse({
       items,
@@ -77,7 +74,7 @@ export async function GET(request: Request) {
       total: count ?? items.length,
     });
   } catch (error) {
-    console.error('GET /api/people failed', error);
-    return internalError('获取人物列表失败。', 'PEOPLE_LIST_FAILED');
+    console.error("GET /api/people failed", error);
+    return internalError("获取人物列表失败。", "PEOPLE_LIST_FAILED");
   }
 }

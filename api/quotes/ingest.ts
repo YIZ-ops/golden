@@ -1,7 +1,7 @@
-import { HITOKOTO_CATEGORIES } from '@/constants/categories';
+import { HITOKOTO_CATEGORIES } from "@/constants/categories";
 
-import { upstreamError } from '../_lib/http';
-import { createServiceRoleClient } from '../_lib/supabase';
+import { upstreamError } from "../_lib/http.js";
+import { createServiceRoleClient } from "../_lib/supabase.js";
 
 interface HitokotoResponse {
   uuid: string;
@@ -29,17 +29,17 @@ export interface CanonicalQuote {
   author: string;
   source?: string;
   category?: string;
-  sourceType?: 'seed' | 'hitokoto' | 'manual';
+  sourceType?: "seed" | "hitokoto" | "manual";
   createdAt?: string;
   updatedAt?: string;
 }
 
 export async function ingestHitokotoQuote(category?: string | null): Promise<CanonicalQuote> {
-  const query = category ? `?c=${encodeURIComponent(category)}` : '';
+  const query = category ? `?c=${encodeURIComponent(category)}` : "";
   const response = await fetch(`https://v1.hitokoto.cn/${query}`);
 
   if (!response.ok) {
-    throw upstreamError('一言接口暂时不可用。', 'HITOKOTO_UPSTREAM_FAILED');
+    throw upstreamError("一言接口暂时不可用。", "HITOKOTO_UPSTREAM_FAILED");
   }
 
   const payload = (await response.json()) as HitokotoResponse;
@@ -47,10 +47,10 @@ export async function ingestHitokotoQuote(category?: string | null): Promise<Can
   const serviceClient = createServiceRoleClient();
 
   const quoteLookup = await serviceClient
-    .from('quotes')
-    .select('id, source_quote_id, content, author, source, category, source_type, created_at, updated_at')
-    .eq('source_type', 'hitokoto')
-    .eq('source_quote_id', payload.uuid)
+    .from("quotes")
+    .select("id, source_quote_id, content, author, source, category, source_type, created_at, updated_at")
+    .eq("source_type", "hitokoto")
+    .eq("source_quote_id", payload.uuid)
     .maybeSingle();
 
   if (quoteLookup.error) {
@@ -61,17 +61,17 @@ export async function ingestHitokotoQuote(category?: string | null): Promise<Can
 
   if (!quote) {
     const inserted = await serviceClient
-      .from('quotes')
+      .from("quotes")
       .insert({
         source_quote_id: payload.uuid,
         content: payload.hitokoto,
-        author: payload.from_who ?? '佚名',
+        author: payload.from_who ?? "佚名",
         source: payload.from,
-        category: matchedCategory?.name ?? '其他',
-        source_type: 'hitokoto',
-        author_role: 'unknown',
+        category: matchedCategory?.name ?? "其他",
+        source_type: "hitokoto",
+        author_role: "unknown",
       })
-      .select('id, source_quote_id, content, author, source, category, source_type, created_at, updated_at')
+      .select("id, source_quote_id, content, author, source, category, source_type, created_at, updated_at")
       .single();
 
     if (inserted.error) {
@@ -98,7 +98,7 @@ export function normalizeQuoteRecord(row: CanonicalQuoteRow): CanonicalQuote {
 }
 
 function normalizeSourceType(value?: string | null) {
-  if (value === 'seed' || value === 'hitokoto' || value === 'manual') {
+  if (value === "seed" || value === "hitokoto" || value === "manual") {
     return value;
   }
 

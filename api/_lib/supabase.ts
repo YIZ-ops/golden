@@ -1,6 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
-import { env } from './env';
+import { env } from "./env.js";
 
 export function createAnonServerClient() {
   return createClient(env.supabaseUrl, env.supabaseAnonKey, {
