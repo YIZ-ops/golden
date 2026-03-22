@@ -1,4 +1,4 @@
-import { AUTHORS, HITOKOTO_CATEGORIES, SINGERS } from '@/constants/categories';
+import { AUTHORS, HITOKOTO_CATEGORIES, SINGERS } from '../../src/constants/categories.js';
 
 export type AuthorRole = 'author' | 'singer' | 'unknown';
 

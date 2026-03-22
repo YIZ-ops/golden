@@ -1,6 +1,6 @@
 import type { User } from '@supabase/supabase-js';
 
-import type { UserProfile } from '@/types/user';
+import type { UserProfile } from '../../src/types/user';
 
 type ProfileClient = {
   from: (table: 'profiles') => {

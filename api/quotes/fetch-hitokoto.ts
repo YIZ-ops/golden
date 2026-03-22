@@ -1,4 +1,4 @@
-import { HITOKOTO_CATEGORIES } from "@/constants/categories";
+import { HITOKOTO_CATEGORIES } from "../../src/constants/categories.js";
 
 import { ingestHitokotoQuote } from "./ingest.js";
 import { badRequest, internalError, successResponse } from "../_lib/http.js";

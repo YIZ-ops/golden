@@ -1,4 +1,4 @@
-import { HITOKOTO_CATEGORIES } from "@/constants/categories";
+import { HITOKOTO_CATEGORIES } from "../../src/constants/categories.js";
 
 import { upstreamError } from "../_lib/http.js";
 import { createServiceRoleClient } from "../_lib/supabase.js";
