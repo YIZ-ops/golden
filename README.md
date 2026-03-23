@@ -31,7 +31,7 @@ npm install
 ### 3. 启动前端
 
 ```bash
-npm run dev
+npm run vdev
 ```
 
 ### 4. 测试与构建

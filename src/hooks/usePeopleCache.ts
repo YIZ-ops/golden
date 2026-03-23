@@ -70,15 +70,18 @@ export function usePeopleCache(params: GetPeopleParams, options: UsePeopleCacheO
           const pageSize = params.pageSize ?? 50;
           let page = firstPage;
           let total = 0;
+          const existingIds = new Set<string>();
 
           while (true) {
             const response = await getPeople({ ...params, page, pageSize });
-            const existingIds = new Set(items.map((item) => item.id));
             const merged = response.items.filter((item) => !existingIds.has(item.id));
+            merged.forEach((item) => {
+              existingIds.add(item.id);
+            });
             items = [...items, ...merged];
             total = response.total;
 
-            if (response.items.length === 0 || items.length >= total) {
+            if (total <= 0 || page * pageSize >= total) {
               break;
             }
 
