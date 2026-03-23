@@ -24,9 +24,7 @@ describe("usePeopleCache", () => {
 
     vi.mocked(getPeople).mockResolvedValue({ items: mockAuthors });
 
-    const { result, rerender } = renderHook(() =>
-      usePeopleCache({ role: "author", keyword: "", page: 1, pageSize: 20 })
-    );
+    const { result, rerender } = renderHook(() => usePeopleCache({ role: "author", keyword: "", page: 1, pageSize: 20 }));
 
     // First render - should load
     await waitFor(() => {
@@ -50,13 +48,9 @@ describe("usePeopleCache", () => {
       { id: "2", name: "Person 2", role: "author" as const },
     ];
 
-    vi.mocked(getPeople)
-      .mockResolvedValueOnce({ items: mockPeople })
-      .mockResolvedValueOnce({ items: updatedPeople });
+    vi.mocked(getPeople).mockResolvedValueOnce({ items: mockPeople }).mockResolvedValueOnce({ items: updatedPeople });
 
-    const { result } = renderHook(() =>
-      usePeopleCache({ role: "author", keyword: "", page: 1, pageSize: 20 })
-    );
+    const { result } = renderHook(() => usePeopleCache({ role: "author", keyword: "", page: 1, pageSize: 20 }));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -72,23 +66,17 @@ describe("usePeopleCache", () => {
       expect(result.current.people).toEqual(updatedPeople);
     });
 
-    expect(vi.mocked(getPeople).mock.calls.length).toBeGreaterThan(
-      initialCallCount
-    );
+    expect(vi.mocked(getPeople).mock.calls.length).toBeGreaterThan(initialCallCount);
   });
 
   it("should handle different keywords independently", async () => {
     const mockPeople1 = [{ id: "1", name: "Alice", role: "author" as const }];
     const mockPeople2 = [{ id: "2", name: "Bob", role: "author" as const }];
 
-    vi.mocked(getPeople)
-      .mockResolvedValueOnce({ items: mockPeople1 })
-      .mockResolvedValueOnce({ items: mockPeople2 });
+    vi.mocked(getPeople).mockResolvedValueOnce({ items: mockPeople1 }).mockResolvedValueOnce({ items: mockPeople2 });
 
     // Query with keyword "Alice"
-    const { result: result1 } = renderHook(() =>
-      usePeopleCache({ role: "author", keyword: "Alice", page: 1, pageSize: 20 })
-    );
+    const { result: result1 } = renderHook(() => usePeopleCache({ role: "author", keyword: "Alice", page: 1, pageSize: 20 }));
 
     await waitFor(() => {
       expect(result1.current.loading).toBe(false);
@@ -97,9 +85,7 @@ describe("usePeopleCache", () => {
     expect(result1.current.people).toEqual(mockPeople1);
 
     // Query with keyword "Bob"
-    const { result: result2 } = renderHook(() =>
-      usePeopleCache({ role: "author", keyword: "Bob", page: 1, pageSize: 20 })
-    );
+    const { result: result2 } = renderHook(() => usePeopleCache({ role: "author", keyword: "Bob", page: 1, pageSize: 20 }));
 
     await waitFor(() => {
       expect(result2.current.loading).toBe(false);
