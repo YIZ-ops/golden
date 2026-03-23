@@ -1,14 +1,6 @@
-import { motion } from 'motion/react';
+import { motion } from "motion/react";
 
-export const PixelCat = ({
-  size = 24,
-  className = '',
-  ariaLabel = 'loading-cat',
-}: {
-  size?: number;
-  className?: string;
-  ariaLabel?: string;
-}) => (
+export const PixelCat = ({ size = 24, className = "", ariaLabel = "loading-cat" }: { size?: number; className?: string; ariaLabel?: string }) => (
   <motion.svg
     aria-label={ariaLabel}
     animate={{
@@ -22,7 +14,7 @@ export const PixelCat = ({
     transition={{
       repeat: Infinity,
       duration: 3,
-      ease: 'easeInOut',
+      ease: "easeInOut",
     }}
     viewBox="0 0 16 16"
     width={size}
@@ -35,11 +27,11 @@ export const PixelCat = ({
       }}
       d="M1 9H2V11H1V9Z"
       fill="currentColor"
-      style={{ originX: '2px', originY: '11px' }}
+      style={{ originX: "2px", originY: "11px" }}
       transition={{
         repeat: Infinity,
         duration: 1.5,
-        ease: 'easeInOut',
+        ease: "easeInOut",
       }}
     />
     <motion.path
@@ -49,11 +41,11 @@ export const PixelCat = ({
       }}
       d="M0 10H1V12H0V10Z"
       fill="currentColor"
-      style={{ originX: '1px', originY: '12px' }}
+      style={{ originX: "1px", originY: "12px" }}
       transition={{
         repeat: Infinity,
         duration: 1.5,
-        ease: 'easeInOut',
+        ease: "easeInOut",
       }}
     />
 
@@ -66,7 +58,7 @@ export const PixelCat = ({
 
     <motion.g
       animate={{ scaleY: [1, 1, 0.1, 1, 1] }}
-      style={{ originY: '7px' }}
+      style={{ originY: "7px" }}
       transition={{
         repeat: Infinity,
         duration: 4,
@@ -84,18 +76,8 @@ export const PixelCat = ({
     <path d="M13 7H15V7.5H13V7Z" fill="currentColor" opacity="0.3" />
     <path d="M13 8.5H15V9H13V8.5Z" fill="currentColor" opacity="0.3" />
 
-    <motion.path
-      animate={{ opacity: [0.2, 0.6, 0.2] }}
-      d="M3 8.5H4V9.5H3V8.5Z"
-      fill="#FFB3B3"
-      transition={{ repeat: Infinity, duration: 2.5 }}
-    />
-    <motion.path
-      animate={{ opacity: [0.2, 0.6, 0.2] }}
-      d="M12 8.5H13V9.5H12V8.5Z"
-      fill="#FFB3B3"
-      transition={{ repeat: Infinity, duration: 2.5 }}
-    />
+    <motion.path animate={{ opacity: [0.2, 0.6, 0.2] }} d="M3 8.5H4V9.5H3V8.5Z" fill="#FFB3B3" transition={{ repeat: Infinity, duration: 2.5 }} />
+    <motion.path animate={{ opacity: [0.2, 0.6, 0.2] }} d="M12 8.5H13V9.5H12V8.5Z" fill="#FFB3B3" transition={{ repeat: Infinity, duration: 2.5 }} />
 
     <path d="M7 8.5H9V9.5H7V8.5Z" fill="#FFB3B3" />
     <path d="M7.5 9.5H8.5V10H7.5V9.5Z" fill="currentColor" opacity="0.5" />

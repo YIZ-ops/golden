@@ -11,6 +11,7 @@ export const DEFAULT_QUOTE_STYLE: QuoteStyle = {
   borderRadius: 12,
   lineHeight: 1.6,
   letterSpacing: 0.05,
+  showLogo: true,
 };
 
 export const FONT_FAMILIES = [

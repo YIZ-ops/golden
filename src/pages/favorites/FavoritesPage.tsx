@@ -1,20 +1,20 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Check, ChevronDown, PenSquare, Plus } from "lucide-react";
 
 import { StarBottle } from "@/components/StarBottle";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
 import { useAuth } from "@/hooks/useAuth";
+import { useFavoriteFoldersCache } from "@/hooks/useFavoriteFoldersCache";
 import { ApiClientError } from "@/services/api/client";
-import { createFavoriteFolder, favoriteQuote, getFavoriteFolders, type FavoriteFolder } from "@/services/api/favorites";
+import { createFavoriteFolder, favoriteQuote, type FavoriteFolder } from "@/services/api/favorites";
 import { createQuote } from "@/services/api/quotes";
 import { clearSessionAndRedirect } from "@/services/supabase/session";
 
 export function FavoritesPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [folders, setFolders] = useState<FavoriteFolder[]>([]);
-  const [loadingFolders, setLoadingFolders] = useState(false);
+  const { folders, loading: loadingFolders, error: cacheError, refresh: refreshFolders } = useFavoriteFoldersCache(user?.id);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -27,34 +27,6 @@ export function FavoritesPage() {
   const [manualQuoteFolderPickerOpen, setManualQuoteFolderPickerOpen] = useState(false);
   const [manualQuoteError, setManualQuoteError] = useState<string | null>(null);
   const [savingManualQuote, setSavingManualQuote] = useState(false);
-
-  const loadFolders = useCallback(async () => {
-    if (!user) {
-      setFolders([]);
-      return;
-    }
-
-    setLoadingFolders(true);
-    setError(null);
-
-    try {
-      const result = await getFavoriteFolders();
-      setFolders(result.items);
-    } catch (requestError) {
-      if (isUnauthorizedError(requestError)) {
-        await clearSessionAndRedirect("/auth/login");
-        return;
-      }
-
-      setError(requestError instanceof Error ? requestError.message : "获取收藏夹失败。");
-    } finally {
-      setLoadingFolders(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    void loadFolders();
-  }, [loadFolders]);
 
   async function handleCreateFolder() {
     const name = newFolderName.trim();
@@ -69,7 +41,7 @@ export function FavoritesPage() {
       await createFavoriteFolder(name);
       setCreating(false);
       setNewFolderName("");
-      await loadFolders();
+      await refreshFolders();
     } catch (requestError) {
       if (isUnauthorizedError(requestError)) {
         await clearSessionAndRedirect("/auth/login");
@@ -127,7 +99,7 @@ export function FavoritesPage() {
       await favoriteQuote(created.quote.id, folderId);
       resetManualQuoteForm();
       closeManualQuoteDrawer();
-      await loadFolders();
+      await refreshFolders();
     } catch (requestError) {
       if (isUnauthorizedError(requestError)) {
         await clearSessionAndRedirect("/auth/login");
@@ -174,7 +146,7 @@ export function FavoritesPage() {
           </button>
         </div>
 
-        {error ? <p className="mt-5 text-sm text-red-500">{error}</p> : null}
+        {error ? <p className="mt-5 text-sm text-red-500">{error}</p> : cacheError ? <p className="mt-5 text-sm text-red-500">{cacheError}</p> : null}
 
         {loadingFolders ? <LoadingScreen compact label="收藏夹加载中" /> : null}
 
@@ -226,7 +198,7 @@ export function FavoritesPage() {
                 className="app-input w-full rounded-[1.5rem] px-4 py-3 text-sm outline-none"
                 maxLength={24}
                 onChange={(event) => setNewFolderName(event.target.value)}
-                placeholder="输入收藏夹名称（最多 24 字）"
+                placeholder="输入收藏夹名称"
                 value={newFolderName}
               />
               <button

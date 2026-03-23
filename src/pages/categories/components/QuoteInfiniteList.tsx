@@ -161,13 +161,9 @@ export function QuoteInfiniteList({
       {!initialLoading && !error && items.length > 0 ? (
         <div className="grid gap-4">
           {items.map((item) => (
-            <article key={item.id} className="rounded-[1.5rem] border border-stone-200/80 bg-[#f8f4eb] p-5">
+            <article key={item.id} className="rounded-2xl border border-stone-200/80 bg-[#f8f4eb] p-4">
               {onItemClick ? (
-                <button
-                  className="block w-full text-left"
-                  onClick={() => onItemClick(item)}
-                  type="button"
-                >
+                <button className="block w-full text-left" onClick={() => onItemClick(item)} type="button">
                   <p className="font-serif text-lg leading-8 text-stone-900">{item.content}</p>
                   <div className="mt-4 flex items-start justify-between gap-3 text-xs text-stone-500">
                     <div className="flex flex-wrap items-center gap-2">

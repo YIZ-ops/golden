@@ -90,19 +90,22 @@ export function CategoryQuotesPage() {
 
   return (
     <section className="space-y-4">
-      <button
-        className="rounded-full border border-stone-200 px-4 py-2 text-sm text-stone-600 transition hover:border-stone-400 hover:text-stone-900"
-        onClick={() => navigate("/categories")}
-        type="button"
-      >
-        <ChevronLeft size={16} />
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          className="app-button-secondary inline-flex h-9 w-9 items-center justify-center rounded-full"
+          onClick={() => navigate("/categories")}
+          type="button"
+        >
+          <ChevronLeft size={16} />
+        </button>
+        <h2 className="app-text flex-1 truncate text-center font-serif text-xl">{listTitle}</h2>
+        <div aria-hidden="true" className="h-9 w-9 shrink-0" />
+      </div>
 
       <QuoteInfiniteList
         emptyDescription={emptyDescription}
         initialLoadingLabel="列表加载中"
         invalidErrorMessage={invalidErrorMessage}
-        listTitle={listTitle}
         onItemClick={handleOpenQuote}
         onFirstPageLoaded={(items: QuoteListItem[]) => {
           if (!isPersonMode || routeState.personName || items.length === 0) {

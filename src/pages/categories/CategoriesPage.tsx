@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { CategoryFilters } from "@/pages/categories/components/CategoryFilters";
-import { getPeople } from "@/services/api/people";
+import { usePeopleCache } from "@/hooks/usePeopleCache";
 import type { PersonListItem } from "@/types/person";
 
 export function CategoriesPage() {
@@ -10,48 +10,22 @@ export function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [authorOffset, setAuthorOffset] = useState(0);
   const [singerOffset, setSingerOffset] = useState(0);
-  const [authors, setAuthors] = useState<PersonListItem[]>([]);
-  const [singers, setSingers] = useState<PersonListItem[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
+  const { people: authors, loading: authorLoading } = usePeopleCache({
+    role: "author",
+    keyword: searchQuery,
+    page: 1,
+    pageSize: 20,
+  });
 
-    async function loadPeople() {
-      setLoading(true);
+  const { people: singers, loading: singerLoading } = usePeopleCache({
+    role: "singer",
+    keyword: searchQuery,
+    page: 1,
+    pageSize: 20,
+  });
 
-      try {
-        const [authorResponse, singerResponse] = await Promise.all([
-          getPeople({ role: "author", keyword: searchQuery, page: 1, pageSize: 20 }),
-          getPeople({ role: "singer", keyword: searchQuery, page: 1, pageSize: 20 }),
-        ]);
-
-        if (cancelled) {
-          return;
-        }
-
-        setAuthors(authorResponse.items);
-        setSingers(singerResponse.items);
-      } catch {
-        if (cancelled) {
-          return;
-        }
-
-        setAuthors([]);
-        setSingers([]);
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void loadPeople();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [searchQuery]);
+  const loading = authorLoading || singerLoading;
 
   function handleCategorySelect(categoryId: string) {
     navigate(`/categories/${categoryId}`);

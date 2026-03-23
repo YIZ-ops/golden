@@ -1,6 +1,7 @@
 import { BACKGROUND_PRESETS, FONT_FAMILIES, LINE_HEIGHT_PRESETS } from "@/constants/quote-style";
 import type { QuoteStyle } from "@/types/quote";
 import { cn } from "@/utils/cn";
+import { PixelCat } from "@/components/PixelCat";
 
 interface StyleEditorDrawerProps {
   open: boolean;
@@ -41,7 +42,7 @@ export function StyleEditorDrawer({ open, stylePreset, previewQuote, onChange, o
 
         <div className="mt-6 space-y-6">
           <div
-            className="app-border overflow-hidden rounded-[2rem] border bg-[#faf6ec] p-5 shadow-[0_18px_40px_rgba(28,25,23,0.08)]"
+            className="app-border relative overflow-hidden rounded-[2rem] border bg-[#faf6ec] p-5 shadow-[0_18px_40px_rgba(28,25,23,0.08)]"
             data-testid="style-preview-card"
             style={{
               background: stylePreset.background,
@@ -58,7 +59,14 @@ export function StyleEditorDrawer({ open, stylePreset, previewQuote, onChange, o
           >
             <p className="text-[11px] uppercase tracking-[0.28em] opacity-55">{preview.source || "样式预览"}</p>
             <p className="mt-4 text-[1em] leading-[inherit]">{preview.content}</p>
-            <p className="mt-4 text-sm opacity-75">— {preview.author}</p>
+            <div className="mt-4 flex items-center justify-between gap-2 text-sm opacity-75">
+              <span>— {preview.author}</span>
+              {stylePreset.showLogo && (
+                <div className="opacity-60">
+                  <PixelCat size={16} />
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
@@ -181,6 +189,27 @@ export function StyleEditorDrawer({ open, stylePreset, previewQuote, onChange, o
                   type="button"
                 >
                   {align}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="app-text mb-3 text-sm">Logo 显示</p>
+            <div className="grid grid-cols-2 gap-2">
+              {([true, false] as const).map((show) => (
+                <button
+                  key={show.toString()}
+                  className={cn("rounded-full border px-3 py-2 text-sm", stylePreset.showLogo === show ? "app-button-primary" : "app-input app-text")}
+                  onClick={() =>
+                    onChange({
+                      ...stylePreset,
+                      showLogo: show,
+                    })
+                  }
+                  type="button"
+                >
+                  {show ? "显示" : "隐藏"}
                 </button>
               ))}
             </div>

@@ -1,4 +1,4 @@
-import type { PersonRole } from '@/types/person';
+import type { PersonRole } from "@/types/person";
 
 export interface QuotePerson {
   id: string;
@@ -12,7 +12,7 @@ export interface Quote {
   author: string;
   source?: string;
   category?: string;
-  sourceType?: 'seed' | 'hitokoto' | 'manual';
+  sourceType?: "seed" | "hitokoto" | "manual";
   person?: QuotePerson;
   createdBy?: string;
   createdAt?: string;
@@ -24,12 +24,13 @@ export interface QuoteStyle {
   fontFamily: string;
   color: string;
   fontWeight: string;
-  textAlign: 'left' | 'center' | 'right';
+  textAlign: "left" | "center" | "right";
   background: string;
   padding: number;
   borderRadius: number;
   lineHeight: number;
   letterSpacing: number;
+  showLogo: boolean;
 }
 
 export interface HitokotoCategory {

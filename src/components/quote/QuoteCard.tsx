@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 
 import { cn } from "@/utils/cn";
+import { PixelCat } from "@/components/PixelCat";
 import type { QuoteStyle } from "@/types/quote";
 
 interface QuoteCardProps {
@@ -62,10 +63,15 @@ export const QuoteCard = forwardRef<HTMLDivElement, QuoteCardProps>(function Quo
           <div className="flex flex-1 items-start justify-center pt-12">
             <p className="relative max-w-[18rem] text-[1.18em] leading-[1.72]">{quote.content}</p>
           </div>
-          <div className="mt-8 flex items-center justify-center gap-3 text-sm opacity-70">
+          <div className="mt-8 flex items-center justify-between gap-3 text-sm opacity-70">
             <span className="h-px w-8 bg-current/30" />
-            <span className="italic">{quote.author}</span>
+            <span className="italic flex-1 text-center">{quote.author}</span>
             <span className="h-px w-8 bg-current/30" />
+            {stylePreset.showLogo && (
+              <div className="ml-2 opacity-50">
+                <PixelCat size={20} />
+              </div>
+            )}
           </div>
         </div>
       </div>

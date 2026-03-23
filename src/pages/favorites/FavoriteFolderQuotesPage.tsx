@@ -181,20 +181,23 @@ export function FavoriteFolderQuotesPage() {
     });
   }
 
+  const folderTitle = folder?.name || routeState.folderName || "收藏列表";
+
   return (
     <section className="relative space-y-4 pb-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3">
         <button
-          className="inline-flex items-center gap-1 rounded-full border border-stone-200 px-4 py-2 text-sm text-stone-600 transition hover:border-stone-400 hover:text-stone-900"
+          className="app-button-secondary inline-flex h-9 w-9 items-center justify-center rounded-full"
           onClick={() => navigate("/favorites")}
           type="button"
         >
           <ChevronLeft size={16} />
         </button>
+        <h2 className="app-text flex-1 truncate text-center font-serif text-xl">{folderTitle}</h2>
         <div className="flex items-center gap-2">
           <button
             aria-label="修改收藏夹"
-            className="rounded-full border border-stone-200 p-2 text-stone-600"
+            className="app-button-secondary inline-flex h-9 w-9 items-center justify-center rounded-full"
             onClick={() => setRenameOpen(true)}
             type="button"
           >
@@ -202,7 +205,7 @@ export function FavoriteFolderQuotesPage() {
           </button>
           <button
             aria-label="删除收藏夹"
-            className="rounded-full border border-stone-200 p-2 text-stone-600 disabled:cursor-not-allowed disabled:opacity-40"
+            className="app-button-secondary inline-flex h-9 w-9 items-center justify-center rounded-full disabled:cursor-not-allowed disabled:opacity-40"
             disabled={Boolean(folder?.isDefault)}
             onClick={() => setDeleteOpen(true)}
             type="button"
@@ -219,7 +222,6 @@ export function FavoriteFolderQuotesPage() {
         fetchPage={(params) => getFavoriteFolderQuotes({ folderId, page: params.page ?? 1, pageSize: params.pageSize ?? 20 })}
         initialLoadingLabel="收藏夹加载中"
         invalidErrorMessage="收藏夹参数无效，请返回重试。"
-        listTitle={folder?.name || routeState.folderName || "收藏列表"}
         onItemClick={handleOpenQuote}
         queryParams={{ folderId }}
         requestErrorMessage="加载收藏夹失败，请稍后重试。"
