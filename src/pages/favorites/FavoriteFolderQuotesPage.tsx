@@ -269,7 +269,7 @@ export function FavoriteFolderQuotesPage() {
                 className="app-input w-full rounded-[1.5rem] px-4 py-3 text-sm outline-none"
                 maxLength={24}
                 onChange={(event) => setRenameDraft(event.target.value)}
-                placeholder="输入收藏夹名称（最多 24 字）"
+                placeholder="输入收藏夹名称"
                 value={renameDraft}
               />
               <button

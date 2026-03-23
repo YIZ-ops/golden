@@ -298,7 +298,7 @@ export function FavoritesPage() {
                 />
               </label>
 
-              <label className="app-text block space-y-2 text-sm">
+              <div className="app-text block space-y-2 text-sm">
                 <span>收藏夹</span>
                 <div className="relative">
                   <button
@@ -336,7 +336,7 @@ export function FavoritesPage() {
                     </div>
                   ) : null}
                 </div>
-              </label>
+              </div>
 
               <button
                 className="app-button-primary w-full rounded-[1.5rem] px-4 py-3 text-sm"

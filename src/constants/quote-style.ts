@@ -17,7 +17,7 @@ export const FONT_FAMILIES = [
   { name: "中文宋体", value: "'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif" },
   { name: "中文黑体", value: "'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif" },
   { name: "中文楷体", value: "'LXGW WenKai', 'STKaiti', 'KaiTi', serif" },
-  { name: "等宽中文", value: "'Sarasa Mono SC', 'JetBrains Mono', 'Microsoft YaHei', monospace" },
+  { name: "等宽中文", value: "'LXGW WenKai Mono TC', 'Sarasa Mono SC', 'JetBrains Mono', 'Microsoft YaHei', monospace" },
 ] as const;
 
 export const LINE_HEIGHT_PRESETS = [
