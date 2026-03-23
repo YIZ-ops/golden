@@ -23,14 +23,23 @@ export const StarBottle = ({ count, isDarkMode, label, color = "#fbbf24", shape 
     duration: 2 + Math.random() * 2,
   }));
 
-  const getShapeStyles = () => {
+  const getBottleRadiusStyles = () => {
     switch (shape) {
       case "flask":
         return "rounded-b-[4rem] rounded-t-[1.5rem]";
       case "vial":
-        return "rounded-b-3xl rounded-t-xl w-24 h-36";
+        return "rounded-b-3xl rounded-t-xl";
       default:
         return "rounded-b-[3.5rem] rounded-t-3xl";
+    }
+  };
+
+  const getBottleSizeStyles = () => {
+    switch (shape) {
+      case "vial":
+        return "h-36 w-24";
+      default:
+        return "h-40 w-32";
     }
   };
 
@@ -41,9 +50,9 @@ export const StarBottle = ({ count, isDarkMode, label, color = "#fbbf24", shape 
       whileHover={{ scale: 1.05, y: -5 }}
       whileTap={{ scale: 0.95 }}
     >
-      <div className={`relative h-40 w-32 transition-all duration-500 ${getShapeStyles()}`}>
+      <div className={`relative transition-all duration-500 ${getBottleSizeStyles()} ${getBottleRadiusStyles()}`}>
         <div
-          className={`absolute inset-0 overflow-hidden border-2 shadow-[inset_0_0_30px_rgba(255,255,255,0.1)] backdrop-blur-md ${getShapeStyles()} ${
+          className={`absolute inset-0 overflow-hidden border-2 shadow-[inset_0_0_30px_rgba(255,255,255,0.1)] backdrop-blur-md ${getBottleRadiusStyles()} ${
             isDarkMode ? "border-white/10 bg-white/5" : "border-black/5 bg-black/5"
           }`}
         >

@@ -5,9 +5,9 @@ interface EmptyStateProps {
 
 export function EmptyState({ title, description }: EmptyStateProps) {
   return (
-    <div className="rounded-[2rem] border border-dashed border-stone-300 bg-stone-50 p-6 text-center">
-      <h3 className="font-serif text-xl text-stone-900">{title}</h3>
-      <p className="mt-3 text-sm leading-6 text-stone-500">{description}</p>
+    <div className="app-input rounded-[2rem] border border-dashed p-6 text-center">
+      <h3 className="app-text font-serif text-xl">{title}</h3>
+      <p className="app-muted mt-3 text-sm leading-6">{description}</p>
     </div>
   );
 }

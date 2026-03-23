@@ -57,7 +57,7 @@ export function CategoryFilters({
           <span className="sr-only">搜索分类、作者或歌手</span>
           <input
             aria-label="搜索分类、作者或歌手"
-            className="w-full rounded-xl border border-stone-200 bg-[#f8f4eb] px-4 py-4 text-sm text-stone-800 outline-none transition focus:border-stone-400 focus:bg-[#fcf9f3]"
+            className="app-input w-full rounded-xl px-4 py-4 text-sm outline-none"
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="搜索分类、作者或歌手"
             type="search"
@@ -103,18 +103,13 @@ function FilterSection({
   disabled: boolean;
 }) {
   return (
-    <section className="border-b border-stone-200/70 pb-5 last:border-b-0 last:pb-0">
+    <section className="app-border border-b pb-5 last:border-b-0 last:pb-0">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h3 className="text-sm font-semibold text-stone-900">{title}</h3>
+          <h3 className="app-text text-sm font-semibold">{title}</h3>
         </div>
         {actionLabel && onAction ? (
-          <button
-            className="rounded-full border border-stone-200 px-3 py-1 text-xs text-stone-600 transition hover:border-stone-400 hover:text-stone-900"
-            disabled={disabled}
-            onClick={onAction}
-            type="button"
-          >
+          <button className="app-button-secondary rounded-full px-3 py-1 text-xs transition" disabled={disabled} onClick={onAction} type="button">
             {actionLabel}
           </button>
         ) : null}
@@ -125,7 +120,7 @@ function FilterSection({
           items.map((item) => (
             <button
               key={item.id}
-              className="rounded-full border border-stone-200 bg-[#f8f4eb] px-4 py-2 text-sm text-stone-700 transition hover:border-stone-400 hover:bg-[#fcf9f3] hover:text-stone-900 disabled:opacity-60"
+              className="app-input app-text rounded-full px-4 py-2 text-sm transition hover:bg-[var(--app-input-focus)] disabled:opacity-60"
               disabled={disabled}
               onClick={() => onSelect(item)}
               type="button"
@@ -134,7 +129,7 @@ function FilterSection({
             </button>
           ))
         ) : (
-          <p className="text-sm text-stone-400">没有匹配项</p>
+          <p className="app-muted text-sm">没有匹配项</p>
         )}
       </div>
     </section>

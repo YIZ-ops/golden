@@ -38,12 +38,12 @@ export function ReflectionPanel({
   return (
     <div className="fixed inset-0 z-30 flex items-end bg-stone-950/35 backdrop-blur-sm" data-testid="reflection-panel-backdrop" onClick={onClose}>
       <div
-        className="mx-auto flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl border border-stone-200/80 bg-white p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-20px_50px_rgba(28,25,23,0.12)]"
+        className="app-surface app-border mx-auto flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-4">
-          <h3 className="font-serif text-xl text-stone-900">感悟记录</h3>
-          <button className="text-sm text-stone-500" onClick={onClose} type="button">
+          <h3 className="app-text font-serif text-xl">感悟记录</h3>
+          <button className="app-muted text-sm" onClick={onClose} type="button">
             关闭
           </button>
         </div>
@@ -53,11 +53,11 @@ export function ReflectionPanel({
           {!loading && items.length === 0 ? <EmptyState title="还没有感悟" description="写下这一句触动你的原因，它会保存在这里。" /> : null}
           {!loading &&
             items.map((item) => (
-              <article key={item.id} className="rounded-[1.5rem] border border-stone-200 bg-stone-50 p-4">
-                <p className="font-serif text-base leading-7 text-stone-900">{item.content}</p>
+              <article key={item.id} className="app-card rounded-[1.5rem] p-4">
+                <p className="app-text font-serif text-base leading-7">{item.content}</p>
                 <div className="mt-3 flex items-center justify-between gap-3">
-                  {item.createdAt ? <p className="text-xs text-stone-500">{formatReflectionTime(item.createdAt)}</p> : <span />}
-                  <button className="text-xs text-stone-400 transition hover:text-red-500" onClick={() => onDelete(item.id)} type="button">
+                  {item.createdAt ? <p className="app-muted text-xs">{formatReflectionTime(item.createdAt)}</p> : <span />}
+                  <button className="app-muted text-xs transition hover:text-red-500" onClick={() => onDelete(item.id)} type="button">
                     删除感悟
                   </button>
                 </div>
@@ -70,7 +70,7 @@ export function ReflectionPanel({
             <span className="sr-only">新增感悟</span>
             <textarea
               aria-label="新增感悟"
-              className="min-h-28 w-full rounded-[1.5rem] border border-stone-200 bg-stone-50 px-4 py-4 text-sm text-stone-800 outline-none transition focus:border-stone-400"
+              className="app-input min-h-28 w-full rounded-[1.5rem] px-4 py-4 text-sm outline-none"
               onChange={(event) => onDraftChange(event.target.value)}
               placeholder="写下此刻的想法..."
               value={draft}
@@ -78,14 +78,14 @@ export function ReflectionPanel({
           </label>
           <button
             aria-label="提交感悟"
-            className="w-full rounded-[1.5rem] bg-stone-900 px-4 py-3 text-sm text-white"
+            className="app-button-primary w-full rounded-[1.5rem] px-4 py-3 text-sm"
             disabled={submitting}
             onClick={onSubmit}
             type="button"
           >
             {submitting ? (
               <span className="flex items-center justify-center gap-2">
-                <PixelCat ariaLabel="loading-cat" className="text-white" size={16} />
+                <PixelCat ariaLabel="loading-cat" className="text-current" size={16} />
                 <span>提交中...</span>
               </span>
             ) : (

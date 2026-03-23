@@ -148,8 +148,8 @@ export function FavoritesPage() {
     return (
       <section className="space-y-4">
         <IntroCopy>登录后即可把喜欢的句子留在收藏夹里。</IntroCopy>
-        <div className="border-t border-stone-200/70 pt-4">
-          <Link className="rounded-2xl bg-stone-900 px-4 py-3 text-sm text-white" to="/auth/login">
+        <div className="app-border border-t pt-4">
+          <Link className="app-button-primary rounded-2xl px-4 py-3 text-sm" to="/auth/login">
             去登录
           </Link>
         </div>
@@ -165,7 +165,7 @@ export function FavoritesPage() {
         <div className="flex items-center justify-end gap-4">
           <button
             aria-label="新建收藏夹"
-            className="inline-flex items-center gap-2 rounded-2xl border border-stone-200 px-4 py-2 text-sm text-stone-700"
+            className="app-button-secondary inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm"
             onClick={() => setCreating((current: boolean) => !current)}
             type="button"
           >
@@ -180,15 +180,19 @@ export function FavoritesPage() {
 
         {!loadingFolders && !error && folders.length === 0 ? <p className="mt-6 text-sm text-stone-500">还没有收藏夹，先新建一个吧。</p> : null}
 
-        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid grid-cols-2 gap-4">
           {folders.map((folder) => (
-            <article key={folder.id} className="rounded-3xl border border-stone-200/80 bg-[#f8f4eb] p-4">
+            <article key={folder.id} className="flex items-center justify-center rounded-2xl border border-stone-200/80 bg-[#f8f4eb]">
               <button
-                className="flex w-full justify-center"
+                className="inline-flex w-full items-center justify-center"
                 onClick={() => navigate(`/favorites/${folder.id}`, { state: { folderName: folder.name } })}
                 type="button"
               >
-                <StarBottle color="#f59e0b" count={folder.quoteCount} isDarkMode={false} label={folder.name} shape="vial" />
+                <div className="flex w-full justify-center">
+                  <div className="origin-center scale-[0.85]">
+                    <StarBottle color="#f59e0b" count={folder.quoteCount} isDarkMode={false} label={folder.name} shape="vial" />
+                  </div>
+                </div>
               </button>
             </article>
           ))}
@@ -207,26 +211,26 @@ export function FavoritesPage() {
       {creating ? (
         <div className="fixed inset-0 z-40 flex items-end bg-stone-950/35 backdrop-blur-sm" onClick={() => setCreating(false)}>
           <div
-            className="mx-auto flex w-full max-w-md flex-col rounded-t-3xl border border-stone-200/80 bg-white p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-20px_50px_rgba(28,25,23,0.12)]"
+            className="app-surface app-border mx-auto flex w-full max-w-md flex-col rounded-t-3xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3">
-              <h3 className="font-serif text-xl text-stone-900">新建收藏夹</h3>
-              <button className="text-sm text-stone-500" onClick={() => setCreating(false)} type="button">
+              <h3 className="app-text font-serif text-xl">新建收藏夹</h3>
+              <button className="app-muted text-sm" onClick={() => setCreating(false)} type="button">
                 关闭
               </button>
             </div>
 
             <div className="mt-4 space-y-3">
               <input
-                className="w-full rounded-[1.5rem] border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-stone-400"
+                className="app-input w-full rounded-[1.5rem] px-4 py-3 text-sm outline-none"
                 maxLength={24}
                 onChange={(event) => setNewFolderName(event.target.value)}
                 placeholder="输入收藏夹名称（最多 24 字）"
                 value={newFolderName}
               />
               <button
-                className="w-full rounded-[1.5rem] bg-stone-900 px-4 py-3 text-sm text-white"
+                className="app-button-primary w-full rounded-[1.5rem] px-4 py-3 text-sm"
                 onClick={() => void handleCreateFolder()}
                 type="button"
               >
@@ -350,7 +354,7 @@ export function FavoritesPage() {
 }
 
 function IntroCopy({ children }: { children: string }) {
-  return <p className="border-b border-stone-200/70 pb-4 text-sm leading-6 text-stone-600">{children}</p>;
+  return <p className="app-border app-muted border-b pb-4 text-sm leading-6">{children}</p>;
 }
 
 function isUnauthorizedError(error: unknown) {

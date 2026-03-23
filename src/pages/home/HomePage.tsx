@@ -67,7 +67,6 @@ export function HomePage() {
 
   const streamRef = useRef<HTMLDivElement>(null);
   const activeCardRef = useRef<HTMLDivElement | null>(null);
-  const pendingIndexRef = useRef<number | null>(null);
 
   useEffect(() => {
     const routeState = (location.state ?? {}) as HomeRouteState;
@@ -113,10 +112,6 @@ export function HomePage() {
     }
   }, [quoteStyle]);
 
-  useEffect(() => {
-    syncStreamPosition(currentIndex);
-  }, [currentIndex, quotes.length]);
-
   const currentQuote = quotes[currentIndex] ?? null;
 
   useEffect(() => {
@@ -148,14 +143,6 @@ export function HomePage() {
     const container = event.currentTarget;
     const rawIndex = Math.round(container.scrollLeft / Math.max(container.clientWidth, 1));
     const nextIndex = Math.min(Math.max(rawIndex, 0), Math.max(quotes.length - 1, 0));
-
-    if (pendingIndexRef.current !== null && nextIndex !== pendingIndexRef.current) {
-      return;
-    }
-
-    if (pendingIndexRef.current === nextIndex) {
-      pendingIndexRef.current = null;
-    }
 
     if (nextIndex !== currentIndex && nextIndex >= 0 && nextIndex < quotes.length) {
       setCurrentIndex(nextIndex);
@@ -191,7 +178,7 @@ export function HomePage() {
       return;
     }
 
-    pendingIndexRef.current = nextIndex;
+    syncStreamPosition(nextIndex);
     setCurrentIndex(nextIndex);
   }
 
@@ -440,12 +427,12 @@ export function HomePage() {
           onClick={() => setFavoritePickerOpen(false)}
         >
           <div
-            className="mx-auto flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl border border-stone-200/80 bg-white p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-20px_50px_rgba(28,25,23,0.12)]"
+            className="app-surface app-border mx-auto flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3">
-              <h3 className="font-serif text-xl text-stone-900">选择收藏夹</h3>
-              <button className="text-sm text-stone-500" onClick={() => setFavoritePickerOpen(false)} type="button">
+              <h3 className="app-text font-serif text-xl">选择收藏夹</h3>
+              <button className="app-muted text-sm" onClick={() => setFavoritePickerOpen(false)} type="button">
                 关闭
               </button>
             </div>
@@ -458,12 +445,12 @@ export function HomePage() {
                 {favoriteFolders.map((folder) => (
                   <button
                     key={folder.id}
-                    className="flex items-center justify-between rounded-[1.5rem] border border-stone-200 bg-stone-50 px-4 py-3 text-left text-sm text-stone-700"
+                    className="app-input app-text flex items-center justify-between rounded-[1.5rem] px-4 py-3 text-left text-sm"
                     onClick={() => void handleFavoriteToFolder(folder.id)}
                     type="button"
                   >
                     <span>{folder.name}</span>
-                    <span className="text-xs text-stone-500">{folder.quoteCount} 条</span>
+                    <span className="app-muted text-xs">{folder.quoteCount} 条</span>
                   </button>
                 ))}
               </div>
