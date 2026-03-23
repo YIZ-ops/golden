@@ -15,11 +15,19 @@ const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 // Cache storage for different queries
 const cacheStore = new Map<string, PeopleCacheState>();
 
-function getCacheKey(params: GetPeopleParams): string {
-  return `${params.role}:${params.keyword || ""}:${params.page || 1}`;
+interface UsePeopleCacheOptions {
+  fetchAll?: boolean;
 }
 
-export function usePeopleCache(params: GetPeopleParams) {
+function getCacheKey(params: GetPeopleParams, options: UsePeopleCacheOptions): string {
+  if (options.fetchAll) {
+    return `${params.role}:${params.keyword || ""}:all:${params.pageSize || 50}`;
+  }
+
+  return `${params.role}:${params.keyword || ""}:${params.page || 1}:${params.pageSize || 20}`;
+}
+
+export function usePeopleCache(params: GetPeopleParams, options: UsePeopleCacheOptions = {}) {
   const [cacheState, setCacheState] = useState<PeopleCacheState>({
     data: null,
     timestamp: 0,
@@ -28,11 +36,11 @@ export function usePeopleCache(params: GetPeopleParams) {
   });
 
   const isFirstLoadRef = useRef(true);
-  const cacheKeyRef = useRef(getCacheKey(params));
+  const cacheKeyRef = useRef(getCacheKey(params, options));
 
   const loadPeople = useCallback(
     async (forceRefresh = false) => {
-      const cacheKey = getCacheKey(params);
+      const cacheKey = getCacheKey(params, options);
       cacheKeyRef.current = cacheKey;
 
       // Check if cache is still valid
@@ -55,10 +63,35 @@ export function usePeopleCache(params: GetPeopleParams) {
       }));
 
       try {
-        const result = await getPeople(params);
+        let items: PersonListItem[] = [];
+
+        if (options.fetchAll) {
+          const firstPage = params.page ?? 1;
+          const pageSize = params.pageSize ?? 50;
+          let page = firstPage;
+          let total = 0;
+
+          while (true) {
+            const response = await getPeople({ ...params, page, pageSize });
+            const existingIds = new Set(items.map((item) => item.id));
+            const merged = response.items.filter((item) => !existingIds.has(item.id));
+            items = [...items, ...merged];
+            total = response.total;
+
+            if (response.items.length === 0 || items.length >= total) {
+              break;
+            }
+
+            page += 1;
+          }
+        } else {
+          const result = await getPeople(params);
+          items = result.items;
+        }
+
         const now = Date.now();
         const newState: PeopleCacheState = {
-          data: result.items,
+          data: items,
           timestamp: now,
           loading: false,
           error: null,
@@ -77,10 +110,9 @@ export function usePeopleCache(params: GetPeopleParams) {
         };
 
         setCacheState(errorState);
-        throw requestError;
       }
     },
-    [params],
+    [options, params],
   );
 
   // Initial load on mount or params change

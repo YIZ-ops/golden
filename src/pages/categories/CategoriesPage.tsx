@@ -11,19 +11,25 @@ export function CategoriesPage() {
   const [authorOffset, setAuthorOffset] = useState(0);
   const [singerOffset, setSingerOffset] = useState(0);
 
-  const { people: authors, loading: authorLoading } = usePeopleCache({
-    role: "author",
-    keyword: searchQuery,
-    page: 1,
-    pageSize: 20,
-  });
+  const { people: authors, loading: authorLoading } = usePeopleCache(
+    {
+      role: "author",
+      keyword: searchQuery,
+      page: 1,
+      pageSize: 50,
+    },
+    { fetchAll: true },
+  );
 
-  const { people: singers, loading: singerLoading } = usePeopleCache({
-    role: "singer",
-    keyword: searchQuery,
-    page: 1,
-    pageSize: 20,
-  });
+  const { people: singers, loading: singerLoading } = usePeopleCache(
+    {
+      role: "singer",
+      keyword: searchQuery,
+      page: 1,
+      pageSize: 50,
+    },
+    { fetchAll: true },
+  );
 
   const loading = authorLoading || singerLoading;
 

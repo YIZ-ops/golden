@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type UIEvent } from "react";
+import { useEffect, useRef, useState, type TouchEvent as ReactTouchEvent, type UIEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -27,6 +27,8 @@ const QUOTE_STYLE_STORAGE_KEY = "golden-home-quote-style";
 const QUOTE_BUFFER_SIZE = 5;
 const HOME_QUOTES_CACHE_KEY = "golden-home-quotes-cache";
 const HOME_QUOTES_CACHE_TTL_MS = 30_000;
+const PULL_REFRESH_THRESHOLD_PX = 72;
+const PULL_REFRESH_MAX_DISTANCE_PX = 120;
 
 type HomeRouteState = {
   focusQuote?: QuoteListItem;
@@ -50,6 +52,9 @@ export function HomePage() {
   const [favoriteFoldersLoading, setFavoriteFoldersLoading] = useState(false);
   const [favoriteFolders, setFavoriteFolders] = useState<FavoriteFolder[]>([]);
   const [favoritePickerError, setFavoritePickerError] = useState<string | null>(null);
+  const [manualRefreshTick, setManualRefreshTick] = useState(0);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [pullRefreshing, setPullRefreshing] = useState(false);
   const [quoteStyle, setQuoteStyle] = useState<QuoteStyle>(() => {
     if (typeof window === "undefined") {
       return DEFAULT_QUOTE_STYLE;
@@ -70,12 +75,16 @@ export function HomePage() {
   const streamRef = useRef<HTMLDivElement>(null);
   const activeCardRef = useRef<HTMLDivElement | null>(null);
   const skipNextScrollSyncRef = useRef(false);
+  const touchStartYRef = useRef<number | null>(null);
+  const touchStartXRef = useRef<number | null>(null);
+  const pullGestureActiveRef = useRef(false);
 
   useEffect(() => {
     const routeState = (location.state ?? {}) as HomeRouteState;
     const focusQuote = routeState.focusQuote ? toHomeQuote(routeState.focusQuote) : null;
     const cacheUserId = user?.id ?? null;
-    const cachedItems = readHomeQuotesCache(cacheUserId);
+    const forceRefresh = pullRefreshing;
+    const cachedItems = forceRefresh ? null : readHomeQuotesCache(cacheUserId);
     const hasCachedItems = Boolean(cachedItems && cachedItems.length > 0);
 
     if (hasCachedItems && cachedItems) {
@@ -123,12 +132,101 @@ export function HomePage() {
             setLoading(false);
           }
         }
+      })
+      .finally(() => {
+        if (active && pullRefreshing) {
+          setPullRefreshing(false);
+          setPullDistance(0);
+        }
       });
 
     return () => {
       active = false;
     };
-  }, [location.key, location.state, user?.id]);
+  }, [location.key, location.state, manualRefreshTick, pullRefreshing, user?.id]);
+
+  function triggerPullRefresh() {
+    if (pullRefreshing || loading || authLoading) {
+      return;
+    }
+
+    clearHomeQuotesCache();
+    setPullRefreshing(true);
+    setManualRefreshTick((current) => current + 1);
+  }
+
+  function resetPullGesture() {
+    touchStartYRef.current = null;
+    touchStartXRef.current = null;
+    pullGestureActiveRef.current = false;
+  }
+
+  function handleTouchStart(event: ReactTouchEvent<HTMLElement>) {
+    if (pullRefreshing || reflectionOpen || styleOpen || favoritePickerOpen) {
+      return;
+    }
+
+    const touch = event.touches[0];
+
+    if (!touch) {
+      return;
+    }
+
+    touchStartYRef.current = touch.clientY;
+    touchStartXRef.current = touch.clientX;
+    pullGestureActiveRef.current = false;
+  }
+
+  function handleTouchMove(event: ReactTouchEvent<HTMLElement>) {
+    if (pullRefreshing || reflectionOpen || styleOpen || favoritePickerOpen) {
+      return;
+    }
+
+    const touch = event.touches[0];
+
+    if (!touch || touchStartYRef.current === null || touchStartXRef.current === null) {
+      return;
+    }
+
+    const deltaY = touch.clientY - touchStartYRef.current;
+    const deltaX = touch.clientX - touchStartXRef.current;
+
+    if (deltaY <= 0) {
+      if (pullDistance > 0) {
+        setPullDistance(0);
+      }
+      return;
+    }
+
+    if (Math.abs(deltaY) <= Math.abs(deltaX)) {
+      return;
+    }
+
+    if (!pullGestureActiveRef.current) {
+      if (typeof window !== "undefined" && window.scrollY > 0) {
+        return;
+      }
+      pullGestureActiveRef.current = true;
+    }
+
+    const nextDistance = Math.min(PULL_REFRESH_MAX_DISTANCE_PX, deltaY * 0.55);
+    setPullDistance(nextDistance);
+  }
+
+  function handleTouchEnd() {
+    if (pullDistance >= PULL_REFRESH_THRESHOLD_PX) {
+      triggerPullRefresh();
+    } else {
+      setPullDistance(0);
+    }
+
+    resetPullGesture();
+  }
+
+  function handleTouchCancel() {
+    setPullDistance(0);
+    resetPullGesture();
+  }
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -392,7 +490,24 @@ export function HomePage() {
   }
 
   return (
-    <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden overscroll-y-none" data-testid="home-quote-page">
+    <section
+      className="relative flex min-h-0 flex-1 flex-col overflow-hidden overscroll-y-none"
+      data-testid="home-quote-page"
+      onTouchCancel={handleTouchCancel}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
+      onTouchStart={handleTouchStart}
+    >
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 z-40 flex justify-center transition-transform duration-150"
+        style={{ transform: `translateY(${Math.max(-48, pullDistance - 48)}px)` }}
+      >
+        <div className="app-card app-border mt-2 rounded-full border px-3 py-1 text-xs">
+          <span className="app-muted">
+            {pullRefreshing ? "刷新中..." : pullDistance >= PULL_REFRESH_THRESHOLD_PX ? "松开刷新金句" : "下拉刷新金句"}
+          </span>
+        </div>
+      </div>
       <div className="pointer-events-none absolute inset-x-0 top-4 z-30 flex flex-col items-center gap-2 px-6">
         {loginPrompt ? (
           <div className="pointer-events-auto rounded-full border border-amber-200/60 bg-amber-50/78 px-4 py-2 text-sm text-amber-900 backdrop-blur">
@@ -582,6 +697,14 @@ function writeHomeQuotesCache(userId: string | null, items: QuoteListItem[]) {
   };
 
   window.sessionStorage.setItem(HOME_QUOTES_CACHE_KEY, JSON.stringify(payload));
+}
+
+function clearHomeQuotesCache() {
+  if (!isHomeQuotesCacheEnabled()) {
+    return;
+  }
+
+  window.sessionStorage.removeItem(HOME_QUOTES_CACHE_KEY);
 }
 
 function isHomeQuotesCacheEnabled() {
