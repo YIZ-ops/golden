@@ -4,7 +4,6 @@ import type { Quote } from "@/types/quote";
 
 export interface GetQuotesParams {
   category?: string;
-  authorRole?: "author" | "singer" | "unknown";
   author?: string;
   personId?: string;
   keyword?: string;

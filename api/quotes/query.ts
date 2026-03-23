@@ -1,11 +1,8 @@
 import { AUTHORS, HITOKOTO_CATEGORIES, SINGERS } from "../../src/constants/categories.js";
 
-export type AuthorRole = "author" | "singer" | "unknown";
-
 export interface QuoteQueryParams {
   category: string | null;
   author: string | null;
-  authorRole: AuthorRole | null;
   personId: string | null;
   keyword: string | null;
   page: number;
@@ -17,15 +14,12 @@ export interface QueryValidationError {
   code: string;
 }
 
-const VALID_AUTHOR_ROLES = new Set<AuthorRole>(["author", "singer", "unknown"]);
 const VALID_CATEGORIES = new Set(HITOKOTO_CATEGORIES.map((item) => item.name));
-const VALID_AUTHORS = new Set(AUTHORS.map((item) => item.name));
-const VALID_SINGERS = new Set(SINGERS.map((item) => item.name));
+const VALID_AUTHORS = new Set([...AUTHORS, ...SINGERS].map((item) => item.name));
 
 export function parseQuoteQuery(url: URL): QuoteQueryParams | QueryValidationError {
   const category = readValue(url.searchParams.get("category"));
   const author = readValue(url.searchParams.get("author"));
-  const authorRoleValue = readValue(url.searchParams.get("authorRole"));
   const personId = readValue(url.searchParams.get("personId"));
   const keyword = readValue(url.searchParams.get("keyword"));
   const pageValue = readValue(url.searchParams.get("page")) ?? "1";
@@ -41,19 +35,6 @@ export function parseQuoteQuery(url: URL): QuoteQueryParams | QueryValidationErr
     };
   }
 
-  let authorRole: AuthorRole | null = null;
-
-  if (authorRoleValue) {
-    if (!VALID_AUTHOR_ROLES.has(authorRoleValue as AuthorRole)) {
-      return {
-        message: "authorRole 参数无效。",
-        code: "INVALID_AUTHOR_ROLE",
-      };
-    }
-
-    authorRole = authorRoleValue as AuthorRole;
-  }
-
   if (category && !VALID_CATEGORIES.has(category)) {
     return {
       message: "category 参数无效。",
@@ -61,16 +42,9 @@ export function parseQuoteQuery(url: URL): QuoteQueryParams | QueryValidationErr
     };
   }
 
-  if (author && authorRole === "author" && !VALID_AUTHORS.has(author)) {
+  if (author && !VALID_AUTHORS.has(author)) {
     return {
-      message: "当前 authorRole 下不存在该 author 选项。",
-      code: "INVALID_AUTHOR_FILTER",
-    };
-  }
-
-  if (author && authorRole === "singer" && !VALID_SINGERS.has(author)) {
-    return {
-      message: "当前 authorRole 下不存在该 author 选项。",
+      message: "author 参数无效。",
       code: "INVALID_AUTHOR_FILTER",
     };
   }
@@ -78,7 +52,6 @@ export function parseQuoteQuery(url: URL): QuoteQueryParams | QueryValidationErr
   return {
     category,
     author,
-    authorRole,
     personId,
     keyword,
     page,

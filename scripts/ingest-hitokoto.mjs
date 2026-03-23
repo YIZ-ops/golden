@@ -1,32 +1,27 @@
 // npm run quotes:ingest:hitokoto -- --count=100 --delay-ms=500
-import pg from 'pg';
+import pg from "pg";
 
 const { Client } = pg;
 
-const rawDatabaseUrl =
-  process.env.POSTGRES_URL_NON_POOLING ??
-  process.env.POSTGRES_URL ??
-  process.env.POSTGRES_PRISMA_URL;
+const rawDatabaseUrl = process.env.POSTGRES_URL_NON_POOLING ?? process.env.POSTGRES_URL ?? process.env.POSTGRES_PRISMA_URL;
 
 if (!rawDatabaseUrl) {
-  throw new Error(
-    '缺少数据库连接串，请配置 POSTGRES_URL_NON_POOLING / POSTGRES_URL / POSTGRES_PRISMA_URL。',
-  );
+  throw new Error("缺少数据库连接串，请配置 POSTGRES_URL_NON_POOLING / POSTGRES_URL / POSTGRES_PRISMA_URL。");
 }
 
 const parsedDatabaseUrl = new URL(rawDatabaseUrl);
-parsedDatabaseUrl.searchParams.delete('sslmode');
+parsedDatabaseUrl.searchParams.delete("sslmode");
 
 const args = process.argv.slice(2);
-const count = readNumberArg(args, '--count', 200);
-const rawCategories = readStringArg(args, '--categories');
+const count = readNumberArg(args, "--count", 200);
+const rawCategories = readStringArg(args, "--categories");
 const categories = rawCategories
   ? rawCategories
-      .split(',')
+      .split(",")
       .map((item) => item.trim())
       .filter(Boolean)
   : [];
-const delayMs = readNumberArg(args, '--delay-ms', 600);
+const delayMs = readNumberArg(args, "--delay-ms", 600);
 
 const client = new Client({
   connectionString: parsedDatabaseUrl.toString(),
@@ -53,20 +48,13 @@ try {
           author,
           source,
           category,
-          source_type,
-          author_role
+          source_type
         )
-        values ($1, $2, $3, $4, $5, 'hitokoto', 'unknown')
+        values ($1, $2, $3, $4, $5, 'hitokoto')
         on conflict (source_type, source_quote_id) do nothing
         returning id
       `,
-      [
-        payload.uuid,
-        payload.hitokoto,
-        payload.from_who ?? '佚名',
-        payload.from ?? null,
-        categoryName,
-      ],
+      [payload.uuid, payload.hitokoto, payload.from_who ?? "佚名", payload.from ?? null, categoryName],
     );
 
     if (result.rowCount && result.rowCount > 0) {
@@ -91,11 +79,11 @@ async function fetchHitokoto(categories) {
   const params = new URLSearchParams();
 
   for (const category of categories) {
-    params.append('c', category);
+    params.append("c", category);
   }
 
   const query = params.toString();
-  const url = query ? `https://v1.hitokoto.cn/?${query}` : 'https://v1.hitokoto.cn/';
+  const url = query ? `https://v1.hitokoto.cn/?${query}` : "https://v1.hitokoto.cn/";
   const response = await fetch(url);
 
   if (!response.ok) {
@@ -107,21 +95,21 @@ async function fetchHitokoto(categories) {
 
 function mapCategoryName(code) {
   const categoryMap = new Map([
-    ['a', '动画'],
-    ['b', '漫画'],
-    ['c', '游戏'],
-    ['d', '文学'],
-    ['e', '原创'],
-    ['f', '来自网络'],
-    ['g', '其他'],
-    ['h', '影视'],
-    ['i', '诗词'],
-    ['j', '网易云'],
-    ['k', '哲学'],
-    ['l', '抖机灵'],
+    ["a", "动画"],
+    ["b", "漫画"],
+    ["c", "游戏"],
+    ["d", "文学"],
+    ["e", "原创"],
+    ["f", "来自网络"],
+    ["g", "其他"],
+    ["h", "影视"],
+    ["i", "诗词"],
+    ["j", "网易云"],
+    ["k", "哲学"],
+    ["l", "抖机灵"],
   ]);
 
-  return categoryMap.get(code) ?? '动画';
+  return categoryMap.get(code) ?? "动画";
 }
 
 function readNumberArg(args, name, defaultValue) {

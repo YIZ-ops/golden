@@ -59,7 +59,6 @@ export function CategoryQuotesPage() {
     if (isPersonMode && personRole && personId) {
       return {
         personId,
-        authorRole: personRole,
       };
     }
 

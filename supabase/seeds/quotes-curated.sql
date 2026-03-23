@@ -1,7 +1,6 @@
 insert into public.quotes (
   content,
   author,
-  author_role,
   source,
   category,
   source_type,
@@ -10,7 +9,6 @@ insert into public.quotes (
 select
   seed.content,
   seed.author,
-  seed.author_role,
   seed.source,
   seed.category,
   seed.source_type,
@@ -48,10 +46,10 @@ from (
     ('明月松间照，清泉石上流。', '王维', 'author', '山居秋暝', '诗词', 'seed'),
     ('此情无计可消除，才下眉头，却上心头。', '李清照', 'author', '声声慢', '诗词', 'seed'),
     ('众里寻他千百度。蓦然回首，那人却在，灯火阑珊处。', '辛弃疾', 'author', '青玉案·元夕', '诗词', 'seed')
-) as seed(content, author, author_role, source, category, source_type)
+) as seed(content, author, person_role, source, category, source_type)
 join public.people p
   on p.name = seed.author
- and p.role = seed.author_role
+ and p.role = seed.person_role
 where not exists (
   select 1
   from public.quotes q

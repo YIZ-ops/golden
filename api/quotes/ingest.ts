@@ -69,7 +69,6 @@ export async function ingestHitokotoQuote(category?: string | null): Promise<Can
         source: payload.from,
         category: matchedCategory?.name ?? "其他",
         source_type: "hitokoto",
-        author_role: "unknown",
       })
       .select("id, source_quote_id, content, author, source, category, source_type, created_at, updated_at")
       .single();

@@ -8,7 +8,6 @@ interface QuoteRow {
   id: string;
   content: string;
   author: string;
-  author_role?: string;
   person_id?: string | null;
   category?: string | null;
   source?: string | null;
@@ -45,7 +44,6 @@ export async function POST(request: Request) {
         source: input.source,
         category: input.category,
         source_type: "manual",
-        author_role: "unknown",
         created_by: authResult.user.id,
       })
       .select("*")
@@ -102,10 +100,6 @@ export async function GET(request: Request) {
 
     if (parsed.category) {
       query = query.eq("category", parsed.category);
-    }
-
-    if (parsed.authorRole) {
-      query = query.eq("author_role", parsed.authorRole);
     }
 
     if (parsed.author) {

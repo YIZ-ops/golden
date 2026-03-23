@@ -98,7 +98,6 @@ describe("POST /api/quotes", () => {
       source: "来源甲",
       category: "分类甲",
       source_type: "manual",
-      author_role: "unknown",
       created_by: "user-1",
     });
 
@@ -164,7 +163,6 @@ describe("GET /api/quotes", () => {
     parseQuoteQuery.mockReturnValue({
       category: null,
       author: null,
-      authorRole: null,
       personId: null,
       keyword: null,
       page: 1,

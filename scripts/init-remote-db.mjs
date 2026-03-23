@@ -32,6 +32,7 @@ const sqlFiles = [
   path.join(projectRoot, "supabase", "migrations", "20260323_fix_quote_visibility.sql"),
   path.join(projectRoot, "supabase", "migrations", "20260323_restore_quote_read_visibility.sql"),
   path.join(projectRoot, "supabase", "migrations", "20260323_quotes_update_delete_policy.sql"),
+  path.join(projectRoot, "supabase", "migrations", "20260323_drop_quotes_author_role.sql"),
   path.join(projectRoot, "supabase", "seed.sql"),
   path.join(projectRoot, "supabase", "seeds", "people.sql"),
   path.join(projectRoot, "supabase", "seeds", "quotes-curated.sql"),

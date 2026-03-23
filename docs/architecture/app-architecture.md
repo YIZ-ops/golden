@@ -106,7 +106,9 @@
 ### `quotes`
 
 - 存储金句主数据
-- 包含 `author_role` 与 `source_type`
+- 使用 `person_id` 关联 `people`
+- 使用 `source_type` 区分 `seed | hitokoto | manual`
+- 使用 `created_by` 标识手动创建归属
 
 ### `favorites`
 

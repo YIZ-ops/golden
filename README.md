@@ -1,8 +1,7 @@
 # 金句 App
 
 一个基于 `Vite + React 19 + TypeScript` 的金句 Web 应用
- `Supabase Auth + Postgres + Vercel Functions` 主链路
-
+`Supabase Auth + Postgres + Vercel Functions` 主链路
 
 ## 技术栈
 
@@ -100,6 +99,7 @@ npm run build
 ## 架构文档
 
 - [app-architecture.md](/C:/Users/14798/Desktop/金/docs/architecture/app-architecture.md)
+- [database-structure-and-dependencies.md](/C:/Users/14798/Desktop/金/docs/architecture/database-structure-and-dependencies.md)
 - [2026-03-21-golden-app-rearchitecture-design.md](/C:/Users/14798/Desktop/金/docs/superpowers/specs/2026-03-21-golden-app-rearchitecture-design.md)
 - [2026-03-21-golden-app-rearchitecture.md](/C:/Users/14798/Desktop/金/docs/superpowers/plans/2026-03-21-golden-app-rearchitecture.md)
 
