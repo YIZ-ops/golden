@@ -154,7 +154,7 @@ export function QuoteInfiniteList({
 
   return (
     <>
-      {listTitle ? <h2 className="text-center font-serif text-2xl text-stone-900">{listTitle}</h2> : null}
+      {listTitle ? <h2 className="app-text text-center font-serif text-2xl">{listTitle}</h2> : null}
 
       {initialLoading ? <LoadingScreen compact label={initialLoadingLabel} /> : null}
 
@@ -165,12 +165,12 @@ export function QuoteInfiniteList({
       {!initialLoading && !error && items.length > 0 ? (
         <div className="grid gap-3">
           {items.map((item) => (
-            <article key={item.id} className="rounded-2xl border border-stone-200/80 bg-[#f8f4eb] p-3">
+            <article key={item.id} className="app-card app-border rounded-2xl border bg-[var(--app-input)] p-3">
               {onItemClick ? (
                 <div>
                   <button className="block w-full text-left" onClick={() => onItemClick(item)} type="button">
-                    <p className="font-serif text-lg leading-8 text-stone-900">{item.content}</p>
-                    <div className="mt-4 flex items-start justify-between gap-3 text-xs text-stone-500">
+                    <p className="app-text font-serif text-lg leading-8">{item.content}</p>
+                    <div className="app-muted mt-4 flex items-start justify-between gap-3 text-xs">
                       <div className="flex flex-wrap items-center gap-2">
                         <span>{item.person?.name || item.author}</span>
                         <span>{item.source || "未知"}</span>
@@ -181,8 +181,8 @@ export function QuoteInfiniteList({
                 </div>
               ) : (
                 <div>
-                  <p className="font-serif text-lg leading-8 text-stone-900">{item.content}</p>
-                  <div className="mt-4 flex items-start justify-between gap-3 text-xs text-stone-500">
+                  <p className="app-text font-serif text-lg leading-8">{item.content}</p>
+                  <div className="app-muted mt-4 flex items-start justify-between gap-3 text-xs">
                     <div className="flex flex-wrap items-center gap-2">
                       <span>{item.person?.name || item.author}</span>
                       <span>{item.source || "未知"}</span>
@@ -203,7 +203,7 @@ export function QuoteInfiniteList({
         </>
       ) : null}
 
-      {!initialLoading && !error && !hasMore && items.length > 0 ? <p className="py-2 text-center text-xs text-stone-400">已经到底了</p> : null}
+      {!initialLoading && !error && !hasMore && items.length > 0 ? <p className="app-muted py-2 text-center text-xs">已经到底了</p> : null}
     </>
   );
 }
