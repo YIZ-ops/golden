@@ -363,8 +363,12 @@ export function HomePage() {
   }
 
   async function handleDeleteReflection(reflectionId: string) {
+    if (!currentQuote) {
+      return;
+    }
+
     try {
-      await deleteReflection(reflectionId);
+      await deleteReflection(reflectionId, currentQuote.id);
       setReflections((current) => current.filter((item) => item.id !== reflectionId));
     } catch {
       setError("删除感悟失败，请稍后重试。");

@@ -10,6 +10,7 @@ import {
   deleteFavoriteFolder,
   getFavoriteFolderQuotes,
   getFavoriteFolders,
+  invalidateFavoriteFolderQuotesCache,
   renameFavoriteFolder,
   type FavoriteFolder,
 } from "@/services/api/favorites";
@@ -45,7 +46,6 @@ export function FavoriteFolderQuotesPage() {
   const [editContent, setEditContent] = useState("");
   const [editAuthor, setEditAuthor] = useState("");
   const [editSource, setEditSource] = useState("");
-  const [editCategory, setEditCategory] = useState("");
   const [quoteDeleteTarget, setQuoteDeleteTarget] = useState<QuoteListItem | null>(null);
 
   useEffect(() => {
@@ -199,7 +199,6 @@ export function FavoriteFolderQuotesPage() {
     setEditContent(item.content ?? "");
     setEditAuthor(item.author ?? "");
     setEditSource(item.source ?? "");
-    setEditCategory(item.category ?? "");
   }
 
   async function handleSaveQuoteEdit() {
@@ -209,9 +208,19 @@ export function FavoriteFolderQuotesPage() {
 
     const content = editContent.trim();
     const author = editAuthor.trim();
+    const source = editSource.trim();
 
     if (!content || !author) {
       setError("句子内容和作者不能为空。");
+      return;
+    }
+
+    const originalContent = (editingQuote.content ?? "").trim();
+    const originalAuthor = (editingQuote.author ?? "").trim();
+    const originalSource = (editingQuote.source ?? "").trim();
+
+    if (content === originalContent && author === originalAuthor && source === originalSource) {
+      setEditingQuote(null);
       return;
     }
 
@@ -221,9 +230,9 @@ export function FavoriteFolderQuotesPage() {
         quoteId: editingQuote.id,
         content,
         author,
-        source: editSource.trim() || undefined,
-        category: editCategory.trim() || undefined,
+        source: source || undefined,
       });
+      invalidateFavoriteFolderQuotesCache(folderId);
       setEditingQuote(null);
       setQuoteReloadKey((current) => current + 1);
     } catch (requestError) {
@@ -244,6 +253,7 @@ export function FavoriteFolderQuotesPage() {
     try {
       setError(null);
       await deleteQuote(quoteDeleteTarget.id);
+      invalidateFavoriteFolderQuotesCache(folderId);
       setQuoteDeleteTarget(null);
       setQuoteReloadKey((current) => current + 1);
     } catch (requestError) {
@@ -305,7 +315,7 @@ export function FavoriteFolderQuotesPage() {
           }
 
           return (
-            <>
+            <div className="flex items-center gap-4">
               <button
                 aria-label="编辑句子"
                 className="text-stone-400 transition hover:text-stone-600"
@@ -328,7 +338,7 @@ export function FavoriteFolderQuotesPage() {
               >
                 <Trash2 size={12} />
               </button>
-            </>
+            </div>
           );
         }}
         queryParams={{ folderId }}
@@ -373,15 +383,6 @@ export function FavoriteFolderQuotesPage() {
                   className="app-input w-full rounded-[1.5rem] px-4 py-3 text-sm outline-none"
                   onChange={(event) => setEditSource(event.target.value)}
                   value={editSource}
-                />
-              </label>
-
-              <label className="app-text block space-y-2 text-sm">
-                <span>分类</span>
-                <input
-                  className="app-input w-full rounded-[1.5rem] px-4 py-3 text-sm outline-none"
-                  onChange={(event) => setEditCategory(event.target.value)}
-                  value={editCategory}
                 />
               </label>
 

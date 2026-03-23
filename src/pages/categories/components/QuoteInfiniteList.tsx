@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Heart } from "lucide-react";
 
 import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingScreen } from "@/components/common/LoadingScreen";

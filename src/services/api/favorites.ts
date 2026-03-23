@@ -4,14 +4,15 @@ import type { QuoteListItem } from "@/services/api/quotes";
 import type { Quote } from "@/types/quote";
 
 const FAVORITE_FOLDERS_CACHE_TTL = 30_000;
+const FAVORITE_FOLDER_QUOTES_CACHE_TTL = 30_000;
 
-let favoriteFoldersCache:
-  | {
-      expiresAt: number;
-      value: { items: FavoriteFolder[] };
-    }
-  | null = null;
+let favoriteFoldersCache: {
+  expiresAt: number;
+  value: { items: FavoriteFolder[] };
+} | null = null;
 let favoriteFoldersRequest: Promise<{ items: FavoriteFolder[] }> | null = null;
+const favoriteFolderQuotesCache = new Map<string, { expiresAt: number; value: PaginatedResponse<QuoteListItem> }>();
+const favoriteFolderQuotesRequests = new Map<string, Promise<PaginatedResponse<QuoteListItem>>>();
 
 export interface GetFavoritesParams {
   category?: string;
@@ -48,6 +49,7 @@ export async function favoriteQuote(quoteId: string, folderId?: string) {
     },
   });
   invalidateFavoriteFoldersCache();
+  invalidateFavoriteFolderQuotesCache();
   return result;
 }
 
@@ -59,6 +61,7 @@ export async function unfavoriteQuote(quoteId: string) {
     },
   });
   invalidateFavoriteFoldersCache();
+  invalidateFavoriteFolderQuotesCache();
   return result;
 }
 
@@ -94,6 +97,7 @@ export async function createFavoriteFolder(name: string) {
     body: { name },
   });
   invalidateFavoriteFoldersCache();
+  invalidateFavoriteFolderQuotesCache();
   return result;
 }
 
@@ -103,6 +107,7 @@ export async function renameFavoriteFolder(folderId: string, name: string) {
     body: { folderId, name },
   });
   invalidateFavoriteFoldersCache();
+  invalidateFavoriteFolderQuotesCache(folderId);
   return result;
 }
 
@@ -112,12 +117,40 @@ export async function deleteFavoriteFolder(folderId: string) {
     body: { folderId },
   });
   invalidateFavoriteFoldersCache();
+  invalidateFavoriteFolderQuotesCache();
   return result;
 }
 
 export async function getFavoriteFolderQuotes(params: { folderId: string; page: number; pageSize: number }) {
   const query = buildQueryString(params);
-  return apiRequest<PaginatedResponse<QuoteListItem>>(`/api/favorites/folders/quotes?${query}`);
+  const cacheKey = query;
+  const now = Date.now();
+  const cached = favoriteFolderQuotesCache.get(cacheKey);
+
+  if (cached && cached.expiresAt > now) {
+    return cached.value;
+  }
+
+  const pending = favoriteFolderQuotesRequests.get(cacheKey);
+
+  if (pending) {
+    return pending;
+  }
+
+  const request = apiRequest<PaginatedResponse<QuoteListItem>>(`/api/favorites/folders/quotes?${query}`)
+    .then((result) => {
+      favoriteFolderQuotesCache.set(cacheKey, {
+        expiresAt: Date.now() + FAVORITE_FOLDER_QUOTES_CACHE_TTL,
+        value: result,
+      });
+      return result;
+    })
+    .finally(() => {
+      favoriteFolderQuotesRequests.delete(cacheKey);
+    });
+
+  favoriteFolderQuotesRequests.set(cacheKey, request);
+  return request;
 }
 
 function buildQueryString(params: GetFavoritesParams) {
@@ -135,4 +168,24 @@ function buildQueryString(params: GetFavoritesParams) {
 function invalidateFavoriteFoldersCache() {
   favoriteFoldersCache = null;
   favoriteFoldersRequest = null;
+}
+
+export function invalidateFavoriteFolderQuotesCache(folderId?: string) {
+  if (!folderId) {
+    favoriteFolderQuotesCache.clear();
+    favoriteFolderQuotesRequests.clear();
+    return;
+  }
+
+  for (const key of favoriteFolderQuotesCache.keys()) {
+    if (key.includes(`folderId=${encodeURIComponent(folderId)}`)) {
+      favoriteFolderQuotesCache.delete(key);
+    }
+  }
+
+  for (const key of favoriteFolderQuotesRequests.keys()) {
+    if (key.includes(`folderId=${encodeURIComponent(folderId)}`)) {
+      favoriteFolderQuotesRequests.delete(key);
+    }
+  }
 }
