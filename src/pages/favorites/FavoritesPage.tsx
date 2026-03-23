@@ -22,7 +22,6 @@ export function FavoritesPage() {
   const [manualQuoteContent, setManualQuoteContent] = useState("");
   const [manualQuoteAuthor, setManualQuoteAuthor] = useState("");
   const [manualQuoteSource, setManualQuoteSource] = useState("");
-  const [manualQuoteCategory, setManualQuoteCategory] = useState("");
   const [manualQuoteFolderId, setManualQuoteFolderId] = useState("");
   const [manualQuoteFolderPickerOpen, setManualQuoteFolderPickerOpen] = useState(false);
   const [manualQuoteError, setManualQuoteError] = useState<string | null>(null);
@@ -67,7 +66,6 @@ export function FavoritesPage() {
     setManualQuoteContent("");
     setManualQuoteAuthor("");
     setManualQuoteSource("");
-    setManualQuoteCategory("");
     setManualQuoteFolderId("");
     setManualQuoteFolderPickerOpen(false);
     setManualQuoteError(null);
@@ -77,7 +75,6 @@ export function FavoritesPage() {
     const content = manualQuoteContent.trim();
     const author = manualQuoteAuthor.trim();
     const source = manualQuoteSource.trim();
-    const category = manualQuoteCategory.trim();
     const folderId = manualQuoteFolderId.trim();
 
     if (!content || !author || !folderId) {
@@ -93,7 +90,6 @@ export function FavoritesPage() {
         content,
         author,
         source: source || undefined,
-        category: category || undefined,
       });
 
       await favoriteQuote(created.quote.id, folderId);
@@ -181,9 +177,9 @@ export function FavoritesPage() {
       </button>
 
       {creating ? (
-        <div className="fixed inset-0 z-40 flex items-end bg-stone-950/35 backdrop-blur-sm" onClick={() => setCreating(false)}>
+        <div className="app-modal-backdrop fixed inset-0 z-40 flex items-end" onClick={() => setCreating(false)}>
           <div
-            className="app-surface app-border mx-auto flex w-full max-w-md flex-col rounded-t-3xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+            className="app-surface app-border mx-auto flex w-full max-w-md flex-col rounded-2xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3">
@@ -214,13 +210,9 @@ export function FavoritesPage() {
       ) : null}
 
       {manualQuoteOpen ? (
-        <div
-          className="fixed inset-0 z-40 flex items-end bg-stone-950/35 backdrop-blur-sm"
-          data-testid="manual-quote-backdrop"
-          onClick={closeManualQuoteDrawer}
-        >
+        <div className="app-modal-backdrop fixed inset-0 z-40 flex items-end" data-testid="manual-quote-backdrop" onClick={closeManualQuoteDrawer}>
           <div
-            className="app-surface app-border mx-auto flex w-full max-w-md flex-col rounded-t-3xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+            className="app-surface app-border mx-auto flex w-full max-w-md flex-col rounded-2xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
             data-testid="manual-quote-drawer"
             onClick={(event) => event.stopPropagation()}
           >
@@ -258,15 +250,6 @@ export function FavoritesPage() {
                   className="app-input w-full rounded-[1.5rem] px-4 py-3 text-sm outline-none"
                   onChange={(event) => setManualQuoteSource(event.target.value)}
                   value={manualQuoteSource}
-                />
-              </label>
-
-              <label className="app-text block space-y-2 text-sm">
-                <span>分类</span>
-                <input
-                  className="app-input w-full rounded-[1.5rem] px-4 py-3 text-sm outline-none"
-                  onChange={(event) => setManualQuoteCategory(event.target.value)}
-                  value={manualQuoteCategory}
                 />
               </label>
 

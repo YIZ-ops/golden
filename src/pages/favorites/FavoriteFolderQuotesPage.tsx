@@ -307,7 +307,8 @@ export function FavoriteFolderQuotesPage() {
           return (
             <>
               <button
-                className="app-button-secondary inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs"
+                aria-label="编辑句子"
+                className="text-stone-400 transition hover:text-stone-600"
                 onClick={(event) => {
                   event.stopPropagation();
                   openEditQuote(item);
@@ -315,10 +316,10 @@ export function FavoriteFolderQuotesPage() {
                 type="button"
               >
                 <PencilLine size={12} />
-                编辑
               </button>
               <button
-                className="inline-flex items-center gap-1 rounded-xl bg-red-500 px-3 py-1.5 text-xs text-white"
+                aria-label="删除句子"
+                className="text-stone-400 transition hover:text-stone-600"
                 onClick={(event) => {
                   event.stopPropagation();
                   setQuoteDeleteTarget(item);
@@ -326,7 +327,6 @@ export function FavoriteFolderQuotesPage() {
                 type="button"
               >
                 <Trash2 size={12} />
-                删除
               </button>
             </>
           );
@@ -336,9 +336,9 @@ export function FavoriteFolderQuotesPage() {
       />
 
       {editingQuote ? (
-        <div className="fixed inset-0 z-40 flex items-end bg-stone-950/35 backdrop-blur-sm" onClick={() => setEditingQuote(null)}>
+        <div className="app-modal-backdrop fixed inset-0 z-40 flex items-end" onClick={() => setEditingQuote(null)}>
           <div
-            className="app-surface app-border mx-auto flex w-full max-w-md flex-col rounded-t-3xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+            className="app-surface app-border mx-auto flex w-full max-w-md flex-col rounded-2xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3">
@@ -398,7 +398,7 @@ export function FavoriteFolderQuotesPage() {
       ) : null}
 
       {quoteDeleteTarget ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/25 px-6" onClick={() => setQuoteDeleteTarget(null)}>
+        <div className="app-modal-overlay fixed inset-0 z-40 flex items-center justify-center px-6" onClick={() => setQuoteDeleteTarget(null)}>
           <div className="app-surface app-border w-full max-w-md rounded-3xl border p-5" onClick={(event) => event.stopPropagation()}>
             <h3 className="app-text font-serif text-xl">删除句子</h3>
             <p className="app-muted mt-2 text-sm">删除后会从收藏夹中移除且无法恢复，确认继续吗？</p>
@@ -406,7 +406,7 @@ export function FavoriteFolderQuotesPage() {
               <button className="app-button-secondary rounded-xl px-3 py-2 text-sm" onClick={() => setQuoteDeleteTarget(null)} type="button">
                 取消
               </button>
-              <button className="rounded-xl bg-red-500 px-3 py-2 text-sm text-white" onClick={() => void handleDeleteQuote()} type="button">
+              <button className="app-button-danger rounded-xl px-3 py-2 text-sm" onClick={() => void handleDeleteQuote()} type="button">
                 删除
               </button>
             </div>
@@ -416,7 +416,7 @@ export function FavoriteFolderQuotesPage() {
 
       {deleteOpen ? (
         <div
-          className="fixed inset-0 z-40 flex items-center justify-center bg-black/25 px-6"
+          className="app-modal-overlay fixed inset-0 z-40 flex items-center justify-center px-6"
           data-testid="favorite-folder-delete-backdrop"
           onClick={() => setDeleteOpen(false)}
         >
@@ -427,7 +427,7 @@ export function FavoriteFolderQuotesPage() {
               <button className="app-button-secondary rounded-xl px-3 py-2 text-sm" onClick={() => setDeleteOpen(false)} type="button">
                 取消
               </button>
-              <button className="rounded-xl bg-red-500 px-3 py-2 text-sm text-white" onClick={() => void handleDeleteFolder()} type="button">
+              <button className="app-button-danger rounded-xl px-3 py-2 text-sm" onClick={() => void handleDeleteFolder()} type="button">
                 删除
               </button>
             </div>
@@ -437,12 +437,12 @@ export function FavoriteFolderQuotesPage() {
 
       {renameOpen ? (
         <div
-          className="fixed inset-0 z-40 flex items-end bg-stone-950/35 backdrop-blur-sm"
+          className="app-modal-backdrop fixed inset-0 z-40 flex items-end"
           data-testid="favorite-folder-rename-backdrop"
           onClick={() => setRenameOpen(false)}
         >
           <div
-            className="app-surface app-border mx-auto flex w-full max-w-md flex-col rounded-t-3xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+            className="app-surface app-border mx-auto flex w-full max-w-md flex-col rounded-2xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3">

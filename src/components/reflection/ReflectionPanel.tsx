@@ -38,7 +38,7 @@ export function ReflectionPanel({
   return (
     <div className="fixed inset-0 z-30 flex items-end bg-stone-950/35 backdrop-blur-sm" data-testid="reflection-panel-backdrop" onClick={onClose}>
       <div
-        className="app-surface app-border mx-auto flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+        className="app-surface app-border mx-auto flex max-h-[85vh] w-full max-w-md flex-col rounded-2xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-4">
@@ -57,7 +57,7 @@ export function ReflectionPanel({
                 <p className="app-text font-serif text-base leading-7">{item.content}</p>
                 <div className="mt-3 flex items-center justify-between gap-3">
                   {item.createdAt ? <p className="app-muted text-xs">{formatReflectionTime(item.createdAt)}</p> : <span />}
-                  <button className="app-muted text-xs transition hover:text-red-500" onClick={() => onDelete(item.id)} type="button">
+                  <button className="app-delete-link text-xs" onClick={() => onDelete(item.id)} type="button">
                     删除感悟
                   </button>
                 </div>

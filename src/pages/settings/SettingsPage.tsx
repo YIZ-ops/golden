@@ -167,9 +167,7 @@ export function SettingsPage() {
       setActiveDrawer(null);
     } catch (requestError) {
       setThemeMode(previousThemeMode);
-      setProfile((currentProfile) =>
-        currentProfile ? { ...currentProfile, themeMode: previousThemeMode } : currentProfile,
-      );
+      setProfile((currentProfile) => (currentProfile ? { ...currentProfile, themeMode: previousThemeMode } : currentProfile));
 
       if (isUnauthorizedError(requestError)) {
         await clearSessionAndRedirect("/auth/login");
@@ -260,11 +258,7 @@ export function SettingsPage() {
                 <p className="app-muted truncate text-sm">{profile.email}</p>
               </div>
             </div>
-            <button
-              className="app-button-secondary rounded-2xl px-4 py-2 text-sm"
-              onClick={handleSignOut}
-              type="button"
-            >
+            <button className="app-button-secondary rounded-2xl px-4 py-2 text-sm" onClick={handleSignOut} type="button">
               退出登录
             </button>
           </div>
@@ -274,21 +268,9 @@ export function SettingsPage() {
       </div>
 
       <div className="app-card overflow-hidden rounded-[1.75rem]">
-        <SettingsListButton
-          subtitle={profile?.displayName?.trim() || "未设置昵称"}
-          title="个人资料"
-          onClick={() => openDrawer("profile")}
-        />
-        <SettingsListButton
-          subtitle={getThemeLabel(activeThemeMode)}
-          title="主题偏好"
-          onClick={() => openDrawer("theme")}
-        />
-        <SettingsListButton
-          subtitle="修改登录密码"
-          title="账号安全"
-          onClick={() => openDrawer("security")}
-        />
+        <SettingsListButton subtitle={profile?.displayName?.trim() || "未设置昵称"} title="个人资料" onClick={() => openDrawer("profile")} />
+        <SettingsListButton subtitle={getThemeLabel(activeThemeMode)} title="主题偏好" onClick={() => openDrawer("theme")} />
+        <SettingsListButton subtitle="修改登录密码" title="账号安全" onClick={() => openDrawer("security")} />
       </div>
 
       <SettingsDrawer open={activeDrawer === "profile"} title="个人资料" onClose={closeDrawer}>
@@ -324,11 +306,7 @@ export function SettingsPage() {
               <button
                 key={option.value}
                 aria-pressed={active}
-                className={
-                  active
-                    ? "app-pill-active w-full rounded-2xl px-4 py-3 text-sm"
-                    : "app-pill-inactive w-full rounded-2xl px-4 py-3 text-sm"
-                }
+                className={active ? "app-pill-active w-full rounded-2xl px-4 py-3 text-sm" : "app-pill-inactive w-full rounded-2xl px-4 py-3 text-sm"}
                 disabled={Boolean(updatingTheme)}
                 onClick={() => handleThemeChange(option.value)}
                 type="button"
@@ -362,9 +340,7 @@ export function SettingsPage() {
             <input
               id="settings-confirm-password"
               className="app-input w-full rounded-2xl px-4 py-3 text-sm outline-none"
-              onChange={(event) =>
-                setPasswordDraft((current) => ({ ...current, confirmPassword: event.target.value }))
-              }
+              onChange={(event) => setPasswordDraft((current) => ({ ...current, confirmPassword: event.target.value }))}
               type="password"
               value={passwordDraft.confirmPassword}
             />
@@ -383,15 +359,7 @@ export function SettingsPage() {
   );
 }
 
-function SettingsListButton({
-  title,
-  subtitle,
-  onClick,
-}: {
-  title: string;
-  subtitle: string;
-  onClick: () => void;
-}) {
+function SettingsListButton({ title, subtitle, onClick }: { title: string; subtitle: string; onClick: () => void }) {
   return (
     <button
       className="app-border flex w-full items-center justify-between gap-4 border-b px-5 py-4 text-left last:border-b-0"
@@ -407,29 +375,15 @@ function SettingsListButton({
   );
 }
 
-function SettingsDrawer({
-  open,
-  title,
-  onClose,
-  children,
-}: {
-  open: boolean;
-  title: string;
-  onClose: () => void;
-  children: ReactNode;
-}) {
+function SettingsDrawer({ open, title, onClose, children }: { open: boolean; title: string; onClose: () => void; children: ReactNode }) {
   if (!open) {
     return null;
   }
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-end bg-stone-950/35 backdrop-blur-sm"
-      data-testid="settings-drawer-backdrop"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-40 flex items-end bg-stone-950/35 backdrop-blur-sm" data-testid="settings-drawer-backdrop" onClick={onClose}>
       <div
-        className="app-surface mx-auto w-full max-w-md rounded-t-3xl border px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5 shadow-[0_-20px_50px_rgba(28,25,23,0.12)]"
+        className="app-surface app-border mx-auto w-full max-w-md rounded-2xl border px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5 shadow-[0_-20px_50px_rgba(28,25,23,0.12)]"
         data-testid="settings-drawer-panel"
         onClick={(event) => event.stopPropagation()}
       >
@@ -445,26 +399,12 @@ function SettingsDrawer({
   );
 }
 
-function Avatar({
-  avatarUrl,
-  fallback,
-  failed,
-  onError,
-}: {
-  avatarUrl: string;
-  fallback: string;
-  failed: boolean;
-  onError: () => void;
-}) {
+function Avatar({ avatarUrl, fallback, failed, onError }: { avatarUrl: string; fallback: string; failed: boolean; onError: () => void }) {
   if (avatarUrl && !failed) {
     return <img alt="用户头像" className="h-12 w-12 rounded-full object-cover" onError={onError} src={avatarUrl} />;
   }
 
-  return (
-    <div className="app-button-primary flex h-12 w-12 items-center justify-center rounded-full text-sm font-semibold">
-      {fallback}
-    </div>
-  );
+  return <div className="app-button-primary flex h-12 w-12 items-center justify-center rounded-full text-sm font-semibold">{fallback}</div>;
 }
 
 function getThemeLabel(themeMode: ThemeMode) {
@@ -478,9 +418,6 @@ function IntroCopy({ children }: { children: string }) {
 function isUnauthorizedError(error: unknown) {
   return (
     (error instanceof ApiClientError && error.status === 401) ||
-    (Boolean(error) &&
-      typeof error === "object" &&
-      "status" in error &&
-      (error as { status?: unknown }).status === 401)
+    (Boolean(error) && typeof error === "object" && "status" in error && (error as { status?: unknown }).status === 401)
   );
 }

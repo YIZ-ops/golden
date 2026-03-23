@@ -26,7 +26,7 @@ export function AppShell() {
           </header>
         ) : null}
 
-        <main className={cn("min-h-0 flex-1", immersiveHome ? "flex overflow-hidden pb-[4.75rem]" : "overflow-y-auto px-6 py-5 pb-22")}>
+        <main className={cn("min-h-0 flex-1", immersiveHome ? "flex overflow-hidden pb-[4rem]" : "overflow-y-auto px-4 py-4 pb-20")}>
           <Outlet />
         </main>
 

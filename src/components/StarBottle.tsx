@@ -30,7 +30,7 @@ export const StarBottle = ({ count, isDarkMode, label, color = "#fbbf24", shape 
       case "vial":
         return "rounded-b-3xl rounded-t-xl";
       default:
-        return "rounded-b-[3.5rem] rounded-t-3xl";
+        return "rounded-b-[3.5rem] rounded-2xl";
     }
   };
 

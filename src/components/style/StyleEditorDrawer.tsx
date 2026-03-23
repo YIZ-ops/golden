@@ -29,7 +29,7 @@ export function StyleEditorDrawer({ open, stylePreset, previewQuote, onChange, o
   return (
     <div className="fixed inset-0 z-30 flex items-end bg-stone-950/35 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="app-surface app-border mx-auto flex max-h-[85vh] w-full max-w-md flex-col overflow-y-auto rounded-t-3xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+        className="app-surface app-border mx-auto flex max-h-[85vh] w-full max-w-md flex-col overflow-y-auto rounded-2xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
         data-testid="style-editor-panel"
         onClick={(event) => event.stopPropagation()}
       >

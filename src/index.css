@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap");
 @import "tailwindcss";
 
 @theme {
@@ -43,7 +43,9 @@ body {
   color: var(--app-text);
   font-family: var(--font-sans);
   overflow-x: hidden;
-  transition: background-color 160ms ease, color 160ms ease;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
 }
 
 .golden-gradient {
@@ -61,9 +63,15 @@ body {
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 }
 
 .animate-float {
@@ -87,20 +95,27 @@ body {
 .app-frame {
   background-color: var(--app-bg);
   color: var(--app-text);
-  transition: background-color 160ms ease, color 160ms ease;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
 }
 
 .app-surface {
   background-color: var(--app-surface);
   color: var(--app-text);
   box-shadow: var(--app-shadow);
-  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .app-card {
   background-color: var(--app-card);
   border: 1px solid var(--app-border);
-  transition: background-color 160ms ease, border-color 160ms ease;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
 }
 
 .app-border {
@@ -119,7 +134,10 @@ body {
   background-color: var(--app-input);
   border: 1px solid var(--app-border);
   color: var(--app-text);
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
 }
 
 .app-input::placeholder {
@@ -137,8 +155,17 @@ body {
 }
 
 .app-button-secondary {
+  background-color: transparent;
   border: 1px solid var(--app-border);
   color: var(--app-text);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.app-button-secondary:hover {
+  background-color: var(--app-input);
+  border-color: var(--app-muted);
 }
 
 .app-pill-active {
@@ -150,9 +177,60 @@ body {
   border: 1px solid var(--app-border);
   color: var(--app-text);
 }
+.app-button-danger {
+  background-color: #ef4444;
+  color: #ffffff;
+  transition: background-color 160ms ease;
+}
+
+.app-button-danger:hover {
+  background-color: #dc2626;
+}
+
+[data-theme="dark"] .app-button-danger {
+  background-color: #b91c1c;
+}
+
+[data-theme="dark"] .app-button-danger:hover {
+  background-color: #991b1b;
+}
+
+.app-delete-link {
+  transition: color 160ms ease;
+  color: var(--app-muted);
+}
+
+.app-delete-link:hover {
+  color: #ef4444;
+}
+
+[data-theme="dark"] .app-delete-link:hover {
+  color: #fca5a5;
+}
+
+.app-modal-backdrop {
+  background-color: rgba(28, 25, 23, 0.35);
+  backdrop-filter: blur(4px);
+  transition: background-color 160ms ease;
+}
+
+[data-theme="dark"] .app-modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+.app-modal-overlay {
+  background-color: rgba(0, 0, 0, 0.25);
+  transition: background-color 160ms ease;
+}
+
+[data-theme="dark"] .app-modal-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+}
 
 .app-nav {
   background-color: var(--app-nav);
   border-top: 1px solid var(--app-border);
-  transition: background-color 160ms ease, border-color 160ms ease;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
 }

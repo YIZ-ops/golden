@@ -457,7 +457,7 @@ export function HomePage() {
           onClick={() => setFavoritePickerOpen(false)}
         >
           <div
-            className="app-surface app-border mx-auto flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+            className="app-surface app-border mx-auto flex max-h-[85vh] w-full max-w-md flex-col rounded-2xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3">
