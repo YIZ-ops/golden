@@ -25,6 +25,8 @@ type HomeQuote = QuoteListItem & {
 
 const QUOTE_STYLE_STORAGE_KEY = "golden-home-quote-style";
 const QUOTE_BUFFER_SIZE = 5;
+const HOME_QUOTES_CACHE_KEY = "golden-home-quotes-cache";
+const HOME_QUOTES_CACHE_TTL_MS = 30_000;
 
 type HomeRouteState = {
   focusQuote?: QuoteListItem;
@@ -67,12 +69,29 @@ export function HomePage() {
 
   const streamRef = useRef<HTMLDivElement>(null);
   const activeCardRef = useRef<HTMLDivElement | null>(null);
+  const skipNextScrollSyncRef = useRef(false);
 
   useEffect(() => {
     const routeState = (location.state ?? {}) as HomeRouteState;
     const focusQuote = routeState.focusQuote ? toHomeQuote(routeState.focusQuote) : null;
+    const cacheUserId = user?.id ?? null;
+    const cachedItems = readHomeQuotesCache(cacheUserId);
+    const hasCachedItems = Boolean(cachedItems && cachedItems.length > 0);
+
+    if (hasCachedItems && cachedItems) {
+      const cachedQuotes = cachedItems.map(toHomeQuote);
+      const nextCachedQuotes = focusQuote ? [focusQuote, ...cachedQuotes.filter((item) => item.id !== focusQuote.id)] : cachedQuotes;
+
+      if (nextCachedQuotes.length > 0) {
+        setQuotes(nextCachedQuotes);
+        setCurrentIndex(0);
+        setLoading(false);
+      }
+    } else {
+      setLoading(true);
+    }
+
     let active = true;
-    setLoading(true);
     setError(null);
 
     loadQuoteBatch(focusQuote ? [focusQuote.id] : [])
@@ -85,26 +104,31 @@ export function HomePage() {
         const nextQuotes = focusQuote ? [focusQuote, ...loadedQuotes.filter((item) => item.id !== focusQuote.id)] : loadedQuotes;
 
         if (nextQuotes.length === 0) {
-          setError("首页金句加载失败，请稍后重试。");
-          setLoading(false);
+          if (!hasCachedItems) {
+            setError("首页金句加载失败，请稍后重试。");
+            setLoading(false);
+          }
           return;
         }
 
+        writeHomeQuotesCache(cacheUserId, response.items);
         setQuotes(nextQuotes);
         setCurrentIndex(0);
         setLoading(false);
       })
       .catch(() => {
         if (active) {
-          setError("首页金句加载失败，请稍后重试。");
-          setLoading(false);
+          if (!hasCachedItems) {
+            setError("首页金句加载失败，请稍后重试。");
+            setLoading(false);
+          }
         }
       });
 
     return () => {
       active = false;
     };
-  }, [location.key, location.state]);
+  }, [location.key, location.state, user?.id]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -140,6 +164,11 @@ export function HomePage() {
   }, [reflectionOpen, currentQuote, user]);
 
   function handleScroll(event: UIEvent<HTMLDivElement>) {
+    if (skipNextScrollSyncRef.current) {
+      skipNextScrollSyncRef.current = false;
+      return;
+    }
+
     const container = event.currentTarget;
     const rawIndex = Math.round(container.scrollLeft / Math.max(container.clientWidth, 1));
     const nextIndex = Math.min(Math.max(rawIndex, 0), Math.max(quotes.length - 1, 0));
@@ -178,6 +207,7 @@ export function HomePage() {
       return;
     }
 
+    skipNextScrollSyncRef.current = true;
     syncStreamPosition(nextIndex);
     setCurrentIndex(nextIndex);
   }
@@ -499,4 +529,57 @@ function normalizeHeartbeatCount(response: unknown) {
   const normalized = typeof rawCount === "number" ? rawCount : typeof rawCount === "string" && rawCount.trim() !== "" ? Number(rawCount) : Number.NaN;
 
   return Number.isFinite(normalized) ? normalized : null;
+}
+
+interface HomeQuotesCachePayload {
+  userId: string | null;
+  cachedAt: number;
+  items: QuoteListItem[];
+}
+
+function readHomeQuotesCache(userId: string | null) {
+  if (!isHomeQuotesCacheEnabled()) {
+    return null;
+  }
+
+  const raw = window.sessionStorage.getItem(HOME_QUOTES_CACHE_KEY);
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<HomeQuotesCachePayload>;
+
+    if (!Array.isArray(parsed.items) || typeof parsed.cachedAt !== "number" || parsed.userId !== userId) {
+      return null;
+    }
+
+    if (Date.now() - parsed.cachedAt > HOME_QUOTES_CACHE_TTL_MS) {
+      return null;
+    }
+
+    return parsed.items;
+  } catch {
+    window.sessionStorage.removeItem(HOME_QUOTES_CACHE_KEY);
+    return null;
+  }
+}
+
+function writeHomeQuotesCache(userId: string | null, items: QuoteListItem[]) {
+  if (!isHomeQuotesCacheEnabled()) {
+    return;
+  }
+
+  const payload: HomeQuotesCachePayload = {
+    userId,
+    cachedAt: Date.now(),
+    items,
+  };
+
+  window.sessionStorage.setItem(HOME_QUOTES_CACHE_KEY, JSON.stringify(payload));
+}
+
+function isHomeQuotesCacheEnabled() {
+  return typeof window !== "undefined" && import.meta.env.MODE !== "test";
 }

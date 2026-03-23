@@ -242,3 +242,141 @@ describe("GET /api/quotes", () => {
     });
   });
 });
+
+describe("PATCH /api/quotes", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    requireBearerToken.mockReturnValue("token");
+    isAuthFailure.mockReturnValue(false);
+    createUnauthorizedErrorResponse.mockImplementation(() => new Response(null, { status: 401 }));
+  });
+
+  it("updates own manual quote", async () => {
+    const ownerCheckMaybeSingle = vi.fn(async () => ({
+      data: {
+        id: "quote-1",
+        created_by: "user-1",
+        source_type: "manual",
+      },
+      error: null,
+    }));
+    const update = vi.fn(() => ({
+      eq: () => ({
+        select: () => ({
+          maybeSingle: async () => ({
+            data: {
+              id: "quote-1",
+              content: "新内容",
+              author: "新作者",
+              source: "新来源",
+              category: "新分类",
+              source_type: "manual",
+              created_by: "user-1",
+            },
+            error: null,
+          }),
+        }),
+      }),
+    }));
+
+    const from = vi
+      .fn()
+      .mockReturnValueOnce({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: ownerCheckMaybeSingle,
+          }),
+        }),
+      })
+      .mockReturnValueOnce({
+        update,
+      });
+
+    createUserServerClient.mockReturnValue({
+      auth: {
+        getUser: async () => ({
+          data: { user: { id: "user-1" } },
+          error: null,
+        }),
+      },
+      from,
+    });
+
+    const { PATCH } = await import("./index");
+    const response = await PATCH(
+      new Request("http://localhost/api/quotes", {
+        method: "PATCH",
+        headers: { Authorization: "Bearer token", "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quoteId: "quote-1",
+          content: "新内容",
+          author: "新作者",
+          source: "新来源",
+          category: "新分类",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(update).toHaveBeenCalledWith({
+      content: "新内容",
+      author: "新作者",
+      source: "新来源",
+      category: "新分类",
+    });
+  });
+});
+
+describe("DELETE /api/quotes", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    requireBearerToken.mockReturnValue("token");
+    isAuthFailure.mockReturnValue(false);
+    createUnauthorizedErrorResponse.mockImplementation(() => new Response(null, { status: 401 }));
+  });
+
+  it("rejects deleting quote not owned by current user", async () => {
+    const deleteFn = vi.fn();
+    const from = vi
+      .fn()
+      .mockReturnValueOnce({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({
+              data: {
+                id: "quote-1",
+                created_by: "user-2",
+                source_type: "manual",
+              },
+              error: null,
+            }),
+          }),
+        }),
+      })
+      .mockReturnValueOnce({
+        delete: deleteFn,
+      });
+
+    createUserServerClient.mockReturnValue({
+      auth: {
+        getUser: async () => ({
+          data: { user: { id: "user-1" } },
+          error: null,
+        }),
+      },
+      from,
+    });
+
+    const { DELETE } = await import("./index");
+    const response = await DELETE(
+      new Request("http://localhost/api/quotes", {
+        method: "DELETE",
+        headers: { Authorization: "Bearer token", "Content-Type": "application/json" },
+        body: JSON.stringify({ quoteId: "quote-1" }),
+      }),
+    );
+
+    expect(response.status).toBe(404);
+    expect(deleteFn).not.toHaveBeenCalled();
+  });
+});

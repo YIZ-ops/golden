@@ -17,6 +17,7 @@ interface FavoriteRow {
         category?: string | null;
         source?: string | null;
         source_type?: string | null;
+        created_by?: string | null;
         created_at?: string | null;
       }
     | {
@@ -26,6 +27,7 @@ interface FavoriteRow {
         category?: string | null;
         source?: string | null;
         source_type?: string | null;
+        created_by?: string | null;
         created_at?: string | null;
       }[]
     | null;
@@ -68,9 +70,15 @@ export async function GET(request: Request) {
     const rangeStart = (pagination.page - 1) * pagination.pageSize;
     const rangeEnd = rangeStart + pagination.pageSize - 1;
 
-    const { data: favoriteRows, count, error: favoriteError } = await userClient
+    const {
+      data: favoriteRows,
+      count,
+      error: favoriteError,
+    } = await userClient
       .from("favorites")
-      .select("quote_id, folder_id, created_at, quotes(id, content, author, category, source, source_type, created_at)", { count: "exact" })
+      .select("quote_id, folder_id, created_at, quotes(id, content, author, category, source, source_type, created_by, created_at)", {
+        count: "exact",
+      })
       .eq("user_id", userId)
       .eq("folder_id", folder.id)
       .order("created_at", { ascending: false })
@@ -102,6 +110,7 @@ export async function GET(request: Request) {
       category: row.quotes!.category ?? undefined,
       source: row.quotes!.source ?? undefined,
       sourceType: normalizeSourceType(row.quotes!.source_type),
+      createdBy: row.quotes!.created_by ?? undefined,
       createdAt: row.quotes!.created_at ?? undefined,
       viewerState: {
         isFavorited: true,

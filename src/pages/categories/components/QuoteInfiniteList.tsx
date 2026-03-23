@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Heart } from "lucide-react";
 
 import { EmptyState } from "@/components/common/EmptyState";
@@ -23,6 +23,8 @@ interface QuoteInfiniteListProps {
   loadingMoreLabel?: string;
   onFirstPageLoaded?: (items: QuoteListItem[]) => void;
   onItemClick?: (item: QuoteListItem) => void;
+  renderItemActions?: (item: QuoteListItem) => ReactNode;
+  reloadKey?: string | number;
 }
 
 export function QuoteInfiniteList({
@@ -37,6 +39,8 @@ export function QuoteInfiniteList({
   loadingMoreLabel = "正在加载更多",
   onFirstPageLoaded,
   onItemClick,
+  renderItemActions,
+  reloadKey,
 }: QuoteInfiniteListProps) {
   const [items, setItems] = useState<QuoteListItem[]>([]);
   const [page, setPage] = useState(1);
@@ -96,7 +100,7 @@ export function QuoteInfiniteList({
     return () => {
       cancelled = true;
     };
-  }, [fetchPage, invalidErrorMessage, onFirstPageLoaded, queryParams, requestErrorMessage]);
+  }, [fetchPage, invalidErrorMessage, onFirstPageLoaded, queryParams, requestErrorMessage, reloadKey]);
 
   const loadMore = useCallback(async () => {
     if (!queryParams || initialLoading || loadingMore || !!error || !hasMore) {
@@ -163,15 +167,18 @@ export function QuoteInfiniteList({
           {items.map((item) => (
             <article key={item.id} className="rounded-2xl border border-stone-200/80 bg-[#f8f4eb] p-4">
               {onItemClick ? (
-                <button className="block w-full text-left" onClick={() => onItemClick(item)} type="button">
-                  <p className="font-serif text-lg leading-8 text-stone-900">{item.content}</p>
-                  <div className="mt-4 flex items-start justify-between gap-3 text-xs text-stone-500">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span>{item.person?.name || item.author}</span>
-                      <span>{item.source || "未知"}</span>
+                <div>
+                  <button className="block w-full text-left" onClick={() => onItemClick(item)} type="button">
+                    <p className="font-serif text-lg leading-8 text-stone-900">{item.content}</p>
+                    <div className="mt-4 flex items-start justify-between gap-3 text-xs text-stone-500">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>{item.person?.name || item.author}</span>
+                        <span>{item.source || "未知"}</span>
+                      </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+                  {renderItemActions ? <div className="mt-3 flex justify-end gap-2">{renderItemActions(item)}</div> : null}
+                </div>
               ) : (
                 <div>
                   <p className="font-serif text-lg leading-8 text-stone-900">{item.content}</p>
@@ -181,6 +188,7 @@ export function QuoteInfiniteList({
                       <span>{item.source || "未知"}</span>
                     </div>
                   </div>
+                  {renderItemActions ? <div className="mt-3 flex justify-end gap-2">{renderItemActions(item)}</div> : null}
                 </div>
               )}
             </article>

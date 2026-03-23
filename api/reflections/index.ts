@@ -93,11 +93,7 @@ export async function DELETE(request: Request) {
       return badRequest("reflectionId 是必填项。", "INVALID_REFLECTION_ID");
     }
 
-    const { error } = await authResult.userClient
-      .from("reflections")
-      .delete()
-      .eq("id", reflectionId)
-      .eq("user_id", authResult.user.id);
+    const { error } = await authResult.userClient.from("reflections").delete().eq("id", reflectionId).eq("user_id", authResult.user.id);
 
     if (error) {
       throw error;

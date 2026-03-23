@@ -16,6 +16,7 @@ interface FavoriteRow {
         category?: string | null;
         source?: string | null;
         source_type?: string | null;
+        created_by?: string | null;
         created_at?: string | null;
       }
     | {
@@ -25,6 +26,7 @@ interface FavoriteRow {
         category?: string | null;
         source?: string | null;
         source_type?: string | null;
+        created_by?: string | null;
         created_at?: string | null;
       }[]
     | null;
@@ -67,7 +69,7 @@ export async function GET(request: Request) {
 
     const query = userClient
       .from("favorites")
-      .select("quote_id, folder_id, created_at, quotes(id, content, author, category, source, source_type, created_at)")
+      .select("quote_id, folder_id, created_at, quotes(id, content, author, category, source, source_type, created_by, created_at)")
       .eq("user_id", userId);
 
     const { data: favoriteRows, error: favoriteError } = await query.order("created_at", { ascending: false });
@@ -106,6 +108,7 @@ export async function GET(request: Request) {
       category: row.quotes!.category ?? undefined,
       source: row.quotes!.source ?? undefined,
       sourceType: normalizeSourceType(row.quotes!.source_type),
+      createdBy: row.quotes!.created_by ?? undefined,
       createdAt: row.quotes!.created_at ?? undefined,
       viewerState: {
         isFavorited: true,

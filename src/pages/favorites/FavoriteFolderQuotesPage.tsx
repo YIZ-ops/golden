@@ -13,6 +13,7 @@ import {
   renameFavoriteFolder,
   type FavoriteFolder,
 } from "@/services/api/favorites";
+import { deleteQuote, updateQuote } from "@/services/api/quotes";
 import { clearSessionAndRedirect } from "@/services/supabase/session";
 import type { QuoteListItem } from "@/services/api/quotes";
 
@@ -39,6 +40,13 @@ export function FavoriteFolderQuotesPage() {
   const [renameOpen, setRenameOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [renameDraft, setRenameDraft] = useState("");
+  const [quoteReloadKey, setQuoteReloadKey] = useState(0);
+  const [editingQuote, setEditingQuote] = useState<QuoteListItem | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editAuthor, setEditAuthor] = useState("");
+  const [editSource, setEditSource] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [quoteDeleteTarget, setQuoteDeleteTarget] = useState<QuoteListItem | null>(null);
 
   useEffect(() => {
     if (!renameOpen && !deleteOpen) {
@@ -181,6 +189,73 @@ export function FavoriteFolderQuotesPage() {
     });
   }
 
+  function canManageQuote(item: QuoteListItem) {
+    return Boolean(user?.id) && item.sourceType === "manual" && item.createdBy === user?.id;
+  }
+
+  function openEditQuote(item: QuoteListItem) {
+    setError(null);
+    setEditingQuote(item);
+    setEditContent(item.content ?? "");
+    setEditAuthor(item.author ?? "");
+    setEditSource(item.source ?? "");
+    setEditCategory(item.category ?? "");
+  }
+
+  async function handleSaveQuoteEdit() {
+    if (!editingQuote) {
+      return;
+    }
+
+    const content = editContent.trim();
+    const author = editAuthor.trim();
+
+    if (!content || !author) {
+      setError("句子内容和作者不能为空。");
+      return;
+    }
+
+    try {
+      setError(null);
+      await updateQuote({
+        quoteId: editingQuote.id,
+        content,
+        author,
+        source: editSource.trim() || undefined,
+        category: editCategory.trim() || undefined,
+      });
+      setEditingQuote(null);
+      setQuoteReloadKey((current) => current + 1);
+    } catch (requestError) {
+      if (isUnauthorizedError(requestError)) {
+        await clearSessionAndRedirect("/auth/login");
+        return;
+      }
+
+      setError(requestError instanceof Error ? requestError.message : "编辑句子失败。");
+    }
+  }
+
+  async function handleDeleteQuote() {
+    if (!quoteDeleteTarget) {
+      return;
+    }
+
+    try {
+      setError(null);
+      await deleteQuote(quoteDeleteTarget.id);
+      setQuoteDeleteTarget(null);
+      setQuoteReloadKey((current) => current + 1);
+    } catch (requestError) {
+      if (isUnauthorizedError(requestError)) {
+        await clearSessionAndRedirect("/auth/login");
+        return;
+      }
+
+      setError(requestError instanceof Error ? requestError.message : "删除句子失败。");
+    }
+  }
+
   const folderTitle = folder?.name || routeState.folderName || "收藏列表";
 
   return (
@@ -223,9 +298,121 @@ export function FavoriteFolderQuotesPage() {
         initialLoadingLabel="收藏夹加载中"
         invalidErrorMessage="收藏夹参数无效，请返回重试。"
         onItemClick={handleOpenQuote}
+        reloadKey={quoteReloadKey}
+        renderItemActions={(item) => {
+          if (!canManageQuote(item)) {
+            return null;
+          }
+
+          return (
+            <>
+              <button
+                className="app-button-secondary inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  openEditQuote(item);
+                }}
+                type="button"
+              >
+                <PencilLine size={12} />
+                编辑
+              </button>
+              <button
+                className="inline-flex items-center gap-1 rounded-xl bg-red-500 px-3 py-1.5 text-xs text-white"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setQuoteDeleteTarget(item);
+                }}
+                type="button"
+              >
+                <Trash2 size={12} />
+                删除
+              </button>
+            </>
+          );
+        }}
         queryParams={{ folderId }}
         requestErrorMessage="加载收藏夹失败，请稍后重试。"
       />
+
+      {editingQuote ? (
+        <div className="fixed inset-0 z-40 flex items-end bg-stone-950/35 backdrop-blur-sm" onClick={() => setEditingQuote(null)}>
+          <div
+            className="app-surface app-border mx-auto flex w-full max-w-md flex-col rounded-t-3xl border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="app-text font-serif text-xl">编辑句子</h3>
+              <button className="app-muted text-sm" onClick={() => setEditingQuote(null)} type="button">
+                关闭
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <label className="app-text block space-y-2 text-sm">
+                <span>句子内容</span>
+                <textarea
+                  className="app-input min-h-28 w-full rounded-[1.5rem] px-4 py-3 text-sm outline-none"
+                  onChange={(event) => setEditContent(event.target.value)}
+                  value={editContent}
+                />
+              </label>
+
+              <label className="app-text block space-y-2 text-sm">
+                <span>作者</span>
+                <input
+                  className="app-input w-full rounded-[1.5rem] px-4 py-3 text-sm outline-none"
+                  onChange={(event) => setEditAuthor(event.target.value)}
+                  value={editAuthor}
+                />
+              </label>
+
+              <label className="app-text block space-y-2 text-sm">
+                <span>来源</span>
+                <input
+                  className="app-input w-full rounded-[1.5rem] px-4 py-3 text-sm outline-none"
+                  onChange={(event) => setEditSource(event.target.value)}
+                  value={editSource}
+                />
+              </label>
+
+              <label className="app-text block space-y-2 text-sm">
+                <span>分类</span>
+                <input
+                  className="app-input w-full rounded-[1.5rem] px-4 py-3 text-sm outline-none"
+                  onChange={(event) => setEditCategory(event.target.value)}
+                  value={editCategory}
+                />
+              </label>
+
+              <button
+                className="app-button-primary w-full rounded-[1.5rem] px-4 py-3 text-sm"
+                onClick={() => void handleSaveQuoteEdit()}
+                type="button"
+              >
+                保存修改
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {quoteDeleteTarget ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/25 px-6" onClick={() => setQuoteDeleteTarget(null)}>
+          <div className="app-surface app-border w-full max-w-md rounded-3xl border p-5" onClick={(event) => event.stopPropagation()}>
+            <h3 className="app-text font-serif text-xl">删除句子</h3>
+            <p className="app-muted mt-2 text-sm">删除后会从收藏夹中移除且无法恢复，确认继续吗？</p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button className="app-button-secondary rounded-xl px-3 py-2 text-sm" onClick={() => setQuoteDeleteTarget(null)} type="button">
+                取消
+              </button>
+              <button className="rounded-xl bg-red-500 px-3 py-2 text-sm text-white" onClick={() => void handleDeleteQuote()} type="button">
+                删除
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {deleteOpen ? (
         <div

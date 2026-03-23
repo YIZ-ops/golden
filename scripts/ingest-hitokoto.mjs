@@ -1,3 +1,4 @@
+// npm run quotes:ingest:hitokoto -- --count=100 --delay-ms=500
 import pg from 'pg';
 
 const { Client } = pg;
@@ -17,7 +18,7 @@ const parsedDatabaseUrl = new URL(rawDatabaseUrl);
 parsedDatabaseUrl.searchParams.delete('sslmode');
 
 const args = process.argv.slice(2);
-const count = readNumberArg(args, '--count', 20);
+const count = readNumberArg(args, '--count', 200);
 const rawCategories = readStringArg(args, '--categories');
 const categories = rawCategories
   ? rawCategories

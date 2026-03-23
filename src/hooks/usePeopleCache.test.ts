@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import { usePeopleCache, clearAllPeopleCache } from "./usePeopleCache";
@@ -18,11 +18,11 @@ describe("usePeopleCache", () => {
 
   it("should cache authors and not refetch for 5 minutes", async () => {
     const mockAuthors = [
-      { id: "1", name: "Author 1", role: "author" as const },
-      { id: "2", name: "Author 2", role: "author" as const },
+      { id: "1", name: "Author 1", role: "author" as const, quoteCount: 12 },
+      { id: "2", name: "Author 2", role: "author" as const, quoteCount: 8 },
     ];
 
-    vi.mocked(getPeople).mockResolvedValue({ items: mockAuthors });
+    vi.mocked(getPeople).mockResolvedValue({ items: mockAuthors, page: 1, pageSize: 20, total: mockAuthors.length });
 
     const { result, rerender } = renderHook(() => usePeopleCache({ role: "author", keyword: "", page: 1, pageSize: 20 }));
 
@@ -42,13 +42,15 @@ describe("usePeopleCache", () => {
   });
 
   it("should refresh people when refresh is called", async () => {
-    const mockPeople = [{ id: "1", name: "Person 1", role: "author" as const }];
+    const mockPeople = [{ id: "1", name: "Person 1", role: "author" as const, quoteCount: 1 }];
     const updatedPeople = [
-      { id: "1", name: "Person 1", role: "author" as const },
-      { id: "2", name: "Person 2", role: "author" as const },
+      { id: "1", name: "Person 1", role: "author" as const, quoteCount: 1 },
+      { id: "2", name: "Person 2", role: "author" as const, quoteCount: 3 },
     ];
 
-    vi.mocked(getPeople).mockResolvedValueOnce({ items: mockPeople }).mockResolvedValueOnce({ items: updatedPeople });
+    vi.mocked(getPeople)
+      .mockResolvedValueOnce({ items: mockPeople, page: 1, pageSize: 20, total: mockPeople.length })
+      .mockResolvedValueOnce({ items: updatedPeople, page: 1, pageSize: 20, total: updatedPeople.length });
 
     const { result } = renderHook(() => usePeopleCache({ role: "author", keyword: "", page: 1, pageSize: 20 }));
 
@@ -60,7 +62,9 @@ describe("usePeopleCache", () => {
     const initialCallCount = vi.mocked(getPeople).mock.calls.length;
 
     // Manually refresh
-    await result.current.refresh();
+    await act(async () => {
+      await result.current.refresh();
+    });
 
     await waitFor(() => {
       expect(result.current.people).toEqual(updatedPeople);
@@ -70,10 +74,12 @@ describe("usePeopleCache", () => {
   });
 
   it("should handle different keywords independently", async () => {
-    const mockPeople1 = [{ id: "1", name: "Alice", role: "author" as const }];
-    const mockPeople2 = [{ id: "2", name: "Bob", role: "author" as const }];
+    const mockPeople1 = [{ id: "1", name: "Alice", role: "author" as const, quoteCount: 2 }];
+    const mockPeople2 = [{ id: "2", name: "Bob", role: "author" as const, quoteCount: 4 }];
 
-    vi.mocked(getPeople).mockResolvedValueOnce({ items: mockPeople1 }).mockResolvedValueOnce({ items: mockPeople2 });
+    vi.mocked(getPeople)
+      .mockResolvedValueOnce({ items: mockPeople1, page: 1, pageSize: 20, total: mockPeople1.length })
+      .mockResolvedValueOnce({ items: mockPeople2, page: 1, pageSize: 20, total: mockPeople2.length });
 
     // Query with keyword "Alice"
     const { result: result1 } = renderHook(() => usePeopleCache({ role: "author", keyword: "Alice", page: 1, pageSize: 20 }));

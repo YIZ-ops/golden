@@ -1,10 +1,10 @@
-import { apiRequest } from '@/services/api/client';
-import type { PaginatedResponse, ViewerState } from '@/types/api';
-import type { Quote } from '@/types/quote';
+import { apiRequest } from "@/services/api/client";
+import type { PaginatedResponse, ViewerState } from "@/types/api";
+import type { Quote } from "@/types/quote";
 
 export interface GetQuotesParams {
   category?: string;
-  authorRole?: 'author' | 'singer' | 'unknown';
+  authorRole?: "author" | "singer" | "unknown";
   author?: string;
   personId?: string;
   keyword?: string;
@@ -18,10 +18,10 @@ export type QuoteListItem = Quote & {
 
 export async function getHomeQuotes(limit = 5, excludeIds: string[] = []) {
   const params = new URLSearchParams();
-  params.set('limit', String(limit));
+  params.set("limit", String(limit));
 
   if (excludeIds.length > 0) {
-    params.set('excludeIds', excludeIds.join(','));
+    params.set("excludeIds", excludeIds.join(","));
   }
 
   return apiRequest<{ items: QuoteListItem[] }>(`/api/home/quotes?${params.toString()}`);
@@ -29,26 +29,35 @@ export async function getHomeQuotes(limit = 5, excludeIds: string[] = []) {
 
 export async function getQuotes(params: GetQuotesParams = {}) {
   const query = buildQueryString(params);
-  const path = query ? `/api/quotes?${query}` : '/api/quotes';
+  const path = query ? `/api/quotes?${query}` : "/api/quotes";
   return apiRequest<PaginatedResponse<QuoteListItem>>(path);
 }
 
 export async function fetchHitokoto(category?: string) {
-  return apiRequest<{ quote: Quote }>('/api/quotes/fetch-hitokoto', {
-    method: 'POST',
+  return apiRequest<{ quote: Quote }>("/api/quotes/fetch-hitokoto", {
+    method: "POST",
     body: category ? { category } : {},
   });
 }
 
-export async function createQuote(input: {
-  content: string;
-  author: string;
-  source?: string;
-  category?: string;
-}) {
-  return apiRequest<{ quote: Quote }>('/api/quotes', {
-    method: 'POST',
+export async function createQuote(input: { content: string; author: string; source?: string; category?: string }) {
+  return apiRequest<{ quote: Quote }>("/api/quotes", {
+    method: "POST",
     body: input,
+  });
+}
+
+export async function updateQuote(input: { quoteId: string; content: string; author: string; source?: string; category?: string }) {
+  return apiRequest<{ quote: Quote }>("/api/quotes", {
+    method: "PATCH",
+    body: input,
+  });
+}
+
+export async function deleteQuote(quoteId: string) {
+  return apiRequest<{ deleted: true; quoteId: string }>("/api/quotes", {
+    method: "DELETE",
+    body: { quoteId },
   });
 }
 
@@ -56,7 +65,7 @@ function buildQueryString(params: GetQuotesParams) {
   const searchParams = new URLSearchParams();
 
   for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== null && value !== '') {
+    if (value !== undefined && value !== null && value !== "") {
       searchParams.set(key, String(value));
     }
   }

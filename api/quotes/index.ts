@@ -1,11 +1,5 @@
-import {
-  createUnauthorizedErrorResponse,
-  getOptionalBearerToken,
-  getUserIdFromJwt,
-  isAuthFailure,
-  requireBearerToken,
-} from "../_lib/auth.js";
-import { badRequest, internalError, successResponse, unauthorized } from "../_lib/http.js";
+import { createUnauthorizedErrorResponse, getOptionalBearerToken, getUserIdFromJwt, isAuthFailure, requireBearerToken } from "../_lib/auth.js";
+import { badRequest, internalError, notFound, successResponse, unauthorized } from "../_lib/http.js";
 import { createAnonServerClient, createUserServerClient } from "../_lib/supabase.js";
 import { getViewerStateMap } from "./viewer-state.js";
 import { isQueryValidationError, parseQuoteQuery } from "./query.js";
@@ -104,10 +98,7 @@ export async function GET(request: Request) {
     const rangeStart = (parsed.page - 1) * parsed.pageSize;
     const rangeEnd = rangeStart + parsed.pageSize - 1;
 
-    let query = queryClient
-      .from("quotes")
-      .select("*, people(id, name, role)", { count: "exact" })
-      .order("created_at", { ascending: false });
+    let query = queryClient.from("quotes").select("*, people(id, name, role)", { count: "exact" }).order("created_at", { ascending: false });
 
     if (parsed.category) {
       query = query.eq("category", parsed.category);
@@ -172,6 +163,89 @@ export async function GET(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    const authResult = await authenticateWriteRequest(request);
+
+    if (authResult instanceof Response) {
+      return authResult;
+    }
+
+    const body = await readJson(request);
+    const input = parseQuoteUpdate(body);
+
+    if ("code" in input) {
+      return badRequest(input.message, input.code);
+    }
+
+    const quote = await findQuoteForOwnerCheck(authResult.userClient, input.quoteId);
+
+    if (!quote || quote.created_by !== authResult.user.id || quote.source_type !== "manual") {
+      return notFound("金句不存在。", "QUOTE_NOT_FOUND");
+    }
+
+    const { data, error } = await authResult.userClient
+      .from("quotes")
+      .update({
+        content: input.content,
+        author: input.author,
+        source: input.source,
+        category: input.category,
+      })
+      .eq("id", input.quoteId)
+      .select("*")
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return successResponse({
+      quote: normalizeQuoteRow(data),
+    });
+  } catch (error) {
+    console.error("PATCH /api/quotes failed", error);
+    return internalError("编辑句子失败。", "QUOTE_UPDATE_FAILED");
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const authResult = await authenticateWriteRequest(request);
+
+    if (authResult instanceof Response) {
+      return authResult;
+    }
+
+    const body = await readJson(request);
+    const quoteId = readRequiredId(body.quoteId);
+
+    if (!quoteId) {
+      return badRequest("quoteId 不能为空。", "INVALID_QUOTE_ID");
+    }
+
+    const quote = await findQuoteForOwnerCheck(authResult.userClient, quoteId);
+
+    if (!quote || quote.created_by !== authResult.user.id || quote.source_type !== "manual") {
+      return notFound("金句不存在。", "QUOTE_NOT_FOUND");
+    }
+
+    const { error } = await authResult.userClient.from("quotes").delete().eq("id", quoteId);
+
+    if (error) {
+      throw error;
+    }
+
+    return successResponse({
+      deleted: true,
+      quoteId,
+    });
+  } catch (error) {
+    console.error("DELETE /api/quotes failed", error);
+    return internalError("删除句子失败。", "QUOTE_DELETE_FAILED");
+  }
+}
+
 async function authenticateWriteRequest(request: Request) {
   const token = requireBearerToken(request.headers.get("Authorization"));
 
@@ -228,6 +302,42 @@ function parseQuoteCreate(body: Record<string, unknown>) {
   };
 }
 
+function parseQuoteUpdate(body: Record<string, unknown>) {
+  const quoteId = readRequiredId(body.quoteId);
+  const content = readRequiredString(body.content);
+  const author = readRequiredString(body.author);
+  const source = readOptionalString(body.source);
+  const category = readOptionalString(body.category);
+
+  if (
+    !quoteId ||
+    content === INVALID_CREATE_VALUE ||
+    author === INVALID_CREATE_VALUE ||
+    source === INVALID_CREATE_VALUE ||
+    category === INVALID_CREATE_VALUE
+  ) {
+    return {
+      message: "quote update 参数无效。",
+      code: "INVALID_QUOTE_UPDATE",
+    };
+  }
+
+  if (!content || !author) {
+    return {
+      message: "quote update 参数无效。",
+      code: "INVALID_QUOTE_UPDATE",
+    };
+  }
+
+  return {
+    quoteId,
+    content,
+    author,
+    source,
+    category,
+  };
+}
+
 const INVALID_CREATE_VALUE = Symbol("INVALID_CREATE_VALUE");
 
 function readRequiredString(value: unknown) {
@@ -250,6 +360,25 @@ function readOptionalString(value: unknown) {
 
   const trimmed = value.trim();
   return trimmed || null;
+}
+
+function readRequiredId(value: unknown) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
+async function findQuoteForOwnerCheck(userClient: ReturnType<typeof createUserServerClient>, quoteId: string) {
+  const { data, error } = await userClient.from("quotes").select("id, created_by, source_type").eq("id", quoteId).maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
 }
 
 function normalizeQuoteRow(item: QuoteRow | null | undefined) {

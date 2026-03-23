@@ -63,7 +63,7 @@ function ActionButton({
     <button
       aria-label={label}
       className={cn(
-        "flex h-9 items-center justify-center rounded-full bg-transparent text-stone-600 transition hover:bg-transparent hover:text-stone-900 active:scale-[0.96]",
+        "flex h-9 items-center justify-center rounded-full bg-transparent text-stone-600 transition hover:bg-white/20 hover:text-stone-900 active:scale-[0.96] cursor-pointer",
         count !== undefined ? "min-w-9 gap-1 px-3" : "w-9",
         active ? activeClass : "",
       )}
