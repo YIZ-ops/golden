@@ -78,6 +78,41 @@ export async function POST(request: Request) {
   }
 }
 
+export async function DELETE(request: Request) {
+  try {
+    const authResult = await authenticateRequest(request);
+
+    if (authResult instanceof Response) {
+      return authResult;
+    }
+
+    const body = await readJson(request);
+    const reflectionId = readBodyString(body.reflectionId);
+
+    if (!reflectionId) {
+      return badRequest("reflectionId 是必填项。", "INVALID_REFLECTION_ID");
+    }
+
+    const { error } = await authResult.userClient
+      .from("reflections")
+      .delete()
+      .eq("id", reflectionId)
+      .eq("user_id", authResult.user.id);
+
+    if (error) {
+      throw error;
+    }
+
+    return successResponse({
+      deleted: true,
+      reflectionId,
+    });
+  } catch (error) {
+    console.error("DELETE /api/reflections failed", error);
+    return internalError("删除感悟失败。", "REFLECTION_DELETE_FAILED");
+  }
+}
+
 async function authenticateRequest(request: Request) {
   const token = requireBearerToken(request.headers.get("Authorization"));
 

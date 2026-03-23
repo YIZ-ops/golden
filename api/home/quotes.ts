@@ -27,10 +27,10 @@ export async function GET(request: Request) {
 
     let currentUserId: string | null = null;
     let queryClient = createAnonServerClient();
-    let viewerStateMap: Awaited<ReturnType<typeof getViewerStateMap>> | null = null;
+    let userClient: ReturnType<typeof createUserServerClient> | null = null;
 
     if (typeof maybeToken === "string") {
-      const userClient = createUserServerClient(maybeToken);
+      userClient = createUserServerClient(maybeToken);
       const userId = getUserIdFromJwt(maybeToken);
 
       if (!userId) {
@@ -39,10 +39,17 @@ export async function GET(request: Request) {
 
       currentUserId = userId;
       queryClient = userClient;
-      viewerStateMap = await getViewerStateMap(userClient);
     }
 
     const localQuotes = await loadLocalQuotes(queryClient, parsed.limit, parsed.excludeIds);
+    const viewerStateMap =
+      currentUserId && userClient
+        ? await getViewerStateMap(
+            userClient,
+            currentUserId,
+            localQuotes.map((item) => item.id),
+          )
+        : null;
     const items = localQuotes.map((item) => normalizeRow(item, currentUserId, viewerStateMap));
 
     return successResponse({ items });

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { ReflectionPanel } from '@/components/reflection/ReflectionPanel';
 
@@ -10,6 +11,7 @@ describe('ReflectionPanel', () => {
         items={[]}
         loading
         onClose={vi.fn()}
+        onDelete={vi.fn()}
         onDraftChange={vi.fn()}
         onSubmit={vi.fn()}
         open
@@ -26,6 +28,7 @@ describe('ReflectionPanel', () => {
         items={[]}
         loading={false}
         onClose={vi.fn()}
+        onDelete={vi.fn()}
         onDraftChange={vi.fn()}
         onSubmit={vi.fn()}
         open
@@ -34,5 +37,34 @@ describe('ReflectionPanel', () => {
     );
 
     expect(screen.getByRole('button', { name: '提交感悟' })).toContainElement(screen.getByLabelText('loading-cat'));
+  });
+
+  it('formats the reflection time and supports deleting an item', async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+
+    render(
+      <ReflectionPanel
+        draft=""
+        items={[
+          {
+            content: "这句让我想到很多事",
+            createdAt: "2024-03-01T12:30:00.000Z",
+            id: "reflection-1",
+          },
+        ]}
+        loading={false}
+        onClose={vi.fn()}
+        onDelete={onDelete}
+        onDraftChange={vi.fn()}
+        onSubmit={vi.fn()}
+        open
+      />,
+    );
+
+    expect(screen.getByText("2024/03/01 20:30")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "删除感悟" }));
+    expect(onDelete).toHaveBeenCalledWith("reflection-1");
   });
 });

@@ -14,15 +14,15 @@ export function LoadingScreen({
     <div
       aria-live="polite"
       className={cn(
-        'flex items-center justify-center text-stone-600',
+        'app-muted flex items-center justify-center',
         compact ? 'min-h-[5rem]' : 'min-h-[16rem]',
         className,
       )}
       role="status"
     >
       <div className={cn('flex flex-col items-center text-center', compact ? 'gap-2' : 'gap-3')}>
-        <PixelCat ariaLabel="loading-cat" className="text-stone-500" size={compact ? 20 : 28} />
-        <p className={cn('font-serif text-stone-700', compact ? 'text-sm' : 'text-lg')}>{label}</p>
+        <PixelCat ariaLabel="loading-cat" className="app-text" size={compact ? 20 : 28} />
+        <p className={cn('app-text font-serif', compact ? 'text-sm' : 'text-lg')}>{label}</p>
       </div>
     </div>
   );

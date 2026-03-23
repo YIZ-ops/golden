@@ -40,6 +40,18 @@ export async function fetchHitokoto(category?: string) {
   });
 }
 
+export async function createQuote(input: {
+  content: string;
+  author: string;
+  source?: string;
+  category?: string;
+}) {
+  return apiRequest<{ quote: Quote }>('/api/quotes', {
+    method: 'POST',
+    body: input,
+  });
+}
+
 function buildQueryString(params: GetQuotesParams) {
   const searchParams = new URLSearchParams();
 

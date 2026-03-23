@@ -1,25 +1,20 @@
-import { useEffect, useRef, useState, type TouchEvent, type UIEvent } from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useRef, useState, type UIEvent } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import { QuoteActions } from '@/components/quote/QuoteActions';
-import { LoadingScreen } from '@/components/common/LoadingScreen';
-import { PixelCat } from '@/components/PixelCat';
-import { QuoteCard } from '@/components/quote/QuoteCard';
-import { ReflectionPanel } from '@/components/reflection/ReflectionPanel';
-import { StyleEditorDrawer } from '@/components/style/StyleEditorDrawer';
-import { DEFAULT_QUOTE_STYLE } from '@/constants/quote-style';
-import { useAuth } from '@/hooks/useAuth';
-import { favoriteQuote, unfavoriteQuote } from '@/services/api/favorites';
-import { heartbeatQuote } from '@/services/api/heartbeats';
-import {
-  createReflection,
-  getReflections,
-  type ReflectionItem,
-} from '@/services/api/reflections';
-import { getHomeQuotes, type QuoteListItem } from '@/services/api/quotes';
-import type { QuoteStyle } from '@/types/quote';
-import { exportQuoteAsImage } from '@/utils/export-image';
+import { QuoteActions } from "@/components/quote/QuoteActions";
+import { LoadingScreen } from "@/components/common/LoadingScreen";
+import { QuoteCard } from "@/components/quote/QuoteCard";
+import { ReflectionPanel } from "@/components/reflection/ReflectionPanel";
+import { StyleEditorDrawer } from "@/components/style/StyleEditorDrawer";
+import { DEFAULT_QUOTE_STYLE } from "@/constants/quote-style";
+import { useAuth } from "@/hooks/useAuth";
+import { favoriteQuote, getFavoriteFolders, unfavoriteQuote, type FavoriteFolder } from "@/services/api/favorites";
+import { heartbeatQuote } from "@/services/api/heartbeats";
+import { createReflection, deleteReflection, getReflections, type ReflectionItem } from "@/services/api/reflections";
+import { getHomeQuotes, type QuoteListItem } from "@/services/api/quotes";
+import type { QuoteStyle } from "@/types/quote";
+import { exportQuoteAsImage } from "@/utils/export-image";
 
 type HomeQuote = QuoteListItem & {
   viewerState: {
@@ -28,12 +23,15 @@ type HomeQuote = QuoteListItem & {
   };
 };
 
-const QUOTE_STYLE_STORAGE_KEY = 'golden-home-quote-style';
+const QUOTE_STYLE_STORAGE_KEY = "golden-home-quote-style";
 const QUOTE_BUFFER_SIZE = 5;
-const PULL_REFRESH_THRESHOLD = 72;
-const MAX_PULL_DISTANCE = 96;
+
+type HomeRouteState = {
+  focusQuote?: QuoteListItem;
+};
 
 export function HomePage() {
+  const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const [quotes, setQuotes] = useState<HomeQuote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,11 +43,13 @@ export function HomePage() {
   const [reflectionsLoading, setReflectionsLoading] = useState(false);
   const [reflectionSubmitting, setReflectionSubmitting] = useState(false);
   const [reflections, setReflections] = useState<ReflectionItem[]>([]);
-  const [reflectionDraft, setReflectionDraft] = useState('');
-  const [pullDistance, setPullDistance] = useState(0);
-  const [refreshing, setRefreshing] = useState(false);
+  const [reflectionDraft, setReflectionDraft] = useState("");
+  const [favoritePickerOpen, setFavoritePickerOpen] = useState(false);
+  const [favoriteFoldersLoading, setFavoriteFoldersLoading] = useState(false);
+  const [favoriteFolders, setFavoriteFolders] = useState<FavoriteFolder[]>([]);
+  const [favoritePickerError, setFavoritePickerError] = useState<string | null>(null);
   const [quoteStyle, setQuoteStyle] = useState<QuoteStyle>(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return DEFAULT_QUOTE_STYLE;
     }
 
@@ -67,24 +67,26 @@ export function HomePage() {
 
   const streamRef = useRef<HTMLDivElement>(null);
   const activeCardRef = useRef<HTMLDivElement | null>(null);
-  const touchStartYRef = useRef<number | null>(null);
-  const touchStartXRef = useRef<number | null>(null);
+  const pendingIndexRef = useRef<number | null>(null);
 
   useEffect(() => {
+    const routeState = (location.state ?? {}) as HomeRouteState;
+    const focusQuote = routeState.focusQuote ? toHomeQuote(routeState.focusQuote) : null;
     let active = true;
     setLoading(true);
     setError(null);
 
-    loadQuoteBatch()
+    loadQuoteBatch(focusQuote ? [focusQuote.id] : [])
       .then((response) => {
         if (!active) {
           return;
         }
 
-        const nextQuotes = response.items.map(toHomeQuote);
+        const loadedQuotes = response.items.map(toHomeQuote);
+        const nextQuotes = focusQuote ? [focusQuote, ...loadedQuotes.filter((item) => item.id !== focusQuote.id)] : loadedQuotes;
 
         if (nextQuotes.length === 0) {
-          setError('首页金句加载失败，请稍后重试。');
+          setError("首页金句加载失败，请稍后重试。");
           setLoading(false);
           return;
         }
@@ -95,7 +97,7 @@ export function HomePage() {
       })
       .catch(() => {
         if (active) {
-          setError('首页金句加载失败，请稍后重试。');
+          setError("首页金句加载失败，请稍后重试。");
           setLoading(false);
         }
       });
@@ -103,10 +105,10 @@ export function HomePage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [location.key, location.state]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       window.localStorage.setItem(QUOTE_STYLE_STORAGE_KEY, JSON.stringify(quoteStyle));
     }
   }, [quoteStyle]);
@@ -147,6 +149,14 @@ export function HomePage() {
     const rawIndex = Math.round(container.scrollLeft / Math.max(container.clientWidth, 1));
     const nextIndex = Math.min(Math.max(rawIndex, 0), Math.max(quotes.length - 1, 0));
 
+    if (pendingIndexRef.current !== null && nextIndex !== pendingIndexRef.current) {
+      return;
+    }
+
+    if (pendingIndexRef.current === nextIndex) {
+      pendingIndexRef.current = null;
+    }
+
     if (nextIndex !== currentIndex && nextIndex >= 0 && nextIndex < quotes.length) {
       setCurrentIndex(nextIndex);
     }
@@ -159,8 +169,8 @@ export function HomePage() {
     }
 
     const nextOffset = index * container.clientWidth;
-    if (typeof container.scrollTo === 'function') {
-      container.scrollTo({ left: nextOffset, behavior: 'smooth' });
+    if (typeof container.scrollTo === "function") {
+      container.scrollTo({ left: nextOffset, behavior: "smooth" });
       return;
     }
 
@@ -181,80 +191,12 @@ export function HomePage() {
       return;
     }
 
+    pendingIndexRef.current = nextIndex;
     setCurrentIndex(nextIndex);
   }
 
-  function handleTouchStart(event: TouchEvent<HTMLElement>) {
-    if (event.touches.length !== 1 || refreshing) {
-      return;
-    }
-
-    touchStartYRef.current = event.touches[0].clientY;
-    touchStartXRef.current = event.touches[0].clientX;
-  }
-
-  function handleTouchMove(event: TouchEvent<HTMLElement>) {
-    if (refreshing || touchStartYRef.current === null || touchStartXRef.current === null) {
-      return;
-    }
-
-    const touch = event.touches[0];
-    const deltaY = touch.clientY - touchStartYRef.current;
-    const deltaX = touch.clientX - touchStartXRef.current;
-
-    if (deltaY <= 0 || deltaY <= Math.abs(deltaX)) {
-      setPullDistance(0);
-      return;
-    }
-
-    setPullDistance(Math.min(deltaY * 0.8, MAX_PULL_DISTANCE));
-  }
-
-  async function handleTouchEnd() {
-    touchStartYRef.current = null;
-    touchStartXRef.current = null;
-
-    if (pullDistance < PULL_REFRESH_THRESHOLD || refreshing) {
-      setPullDistance(0);
-      return;
-    }
-
-    setPullDistance(0);
-    await refreshQuoteBatch();
-  }
-
-  function handleTouchCancel() {
-    touchStartYRef.current = null;
-    touchStartXRef.current = null;
-    setPullDistance(0);
-  }
-
-  async function refreshQuoteBatch() {
-    setRefreshing(true);
-    setError(null);
-
-    try {
-      const response = await loadQuoteBatch(quotes.map((item) => item.id));
-      const nextQuotes = response.items.map(toHomeQuote);
-
-      if (nextQuotes.length === 0) {
-        setError('暂时没有更多不同的金句了，请稍后再试。');
-        return;
-      }
-
-      setQuotes(nextQuotes);
-      setCurrentIndex(0);
-    } catch {
-      setError('刷新金句失败，请稍后重试。');
-    } finally {
-      setRefreshing(false);
-    }
-  }
-
   function loadQuoteBatch(excludeIds: string[] = []) {
-    return excludeIds.length > 0
-      ? getHomeQuotes(QUOTE_BUFFER_SIZE, excludeIds)
-      : getHomeQuotes(QUOTE_BUFFER_SIZE);
+    return excludeIds.length > 0 ? getHomeQuotes(QUOTE_BUFFER_SIZE, excludeIds) : getHomeQuotes(QUOTE_BUFFER_SIZE);
   }
 
   async function handleFavorite() {
@@ -263,14 +205,55 @@ export function HomePage() {
     }
 
     if (!user) {
-      setLoginPrompt('登录后才能收藏、心动或记录感悟。');
+      setLoginPrompt("登录后才能收藏、心动或记录感悟。");
       return;
     }
 
     try {
-      const method = currentQuote.viewerState.isFavorited ? unfavoriteQuote : favoriteQuote;
-      await method(currentQuote.id);
+      if (currentQuote.viewerState.isFavorited) {
+        await unfavoriteQuote(currentQuote.id);
 
+        setError(null);
+        setQuotes((current) =>
+          current.map((item, index) =>
+            index === currentIndex
+              ? {
+                  ...item,
+                  viewerState: {
+                    ...item.viewerState,
+                    isFavorited: false,
+                  },
+                }
+              : item,
+          ),
+        );
+        return;
+      }
+
+      setFavoritePickerOpen(true);
+      setFavoriteFoldersLoading(true);
+      setFavoritePickerError(null);
+
+      const response = await getFavoriteFolders();
+      setFavoriteFolders(response.items);
+    } catch {
+      setFavoritePickerError("收藏夹加载失败，请稍后重试。");
+      setError("收藏操作失败，请稍后重试。");
+    } finally {
+      setFavoriteFoldersLoading(false);
+    }
+  }
+
+  async function handleFavoriteToFolder(folderId: string) {
+    if (!currentQuote) {
+      return;
+    }
+
+    try {
+      await favoriteQuote(currentQuote.id, folderId);
+
+      setFavoritePickerOpen(false);
+      setFavoritePickerError(null);
       setError(null);
       setQuotes((current) =>
         current.map((item, index) =>
@@ -279,14 +262,15 @@ export function HomePage() {
                 ...item,
                 viewerState: {
                   ...item.viewerState,
-                  isFavorited: !item.viewerState.isFavorited,
+                  isFavorited: true,
                 },
               }
             : item,
         ),
       );
     } catch {
-      setError('收藏操作失败，请稍后重试。');
+      setFavoritePickerError("收藏失败，请稍后重试。");
+      setError("收藏操作失败，请稍后重试。");
     }
   }
 
@@ -296,7 +280,7 @@ export function HomePage() {
     }
 
     if (!user) {
-      setLoginPrompt('登录后才能收藏、心动或记录感悟。');
+      setLoginPrompt("登录后才能收藏、心动或记录感悟。");
       return;
     }
 
@@ -305,7 +289,7 @@ export function HomePage() {
       const nextCount = normalizeHeartbeatCount(response);
 
       if (nextCount === null) {
-        setError('记录心动失败，请稍后重试。');
+        setError("记录心动失败，请稍后重试。");
         return;
       }
 
@@ -324,7 +308,7 @@ export function HomePage() {
         ),
       );
     } catch {
-      setError('记录心动失败，请稍后重试。');
+      setError("记录心动失败，请稍后重试。");
     }
   }
 
@@ -334,7 +318,7 @@ export function HomePage() {
     }
 
     if (!user) {
-      setLoginPrompt('登录后才能收藏、心动或记录感悟。');
+      setLoginPrompt("登录后才能收藏、心动或记录感悟。");
       return;
     }
 
@@ -355,9 +339,18 @@ export function HomePage() {
       });
 
       setReflections((current) => [...current, response.reflection]);
-      setReflectionDraft('');
+      setReflectionDraft("");
     } finally {
       setReflectionSubmitting(false);
+    }
+  }
+
+  async function handleDeleteReflection(reflectionId: string) {
+    try {
+      await deleteReflection(reflectionId);
+      setReflections((current) => current.filter((item) => item.id !== reflectionId));
+    } catch {
+      setError("删除感悟失败，请稍后重试。");
     }
   }
 
@@ -371,39 +364,14 @@ export function HomePage() {
 
   if (authLoading || loading) {
     return (
-      <section className="relative -mx-6 -my-6 min-h-[calc(100vh-12rem)] overflow-hidden px-6 py-6">
-        <LoadingScreen className="h-[calc(100vh-12rem)]" label="正在接住下一句。" />
+      <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden overscroll-y-none">
+        <LoadingScreen className="h-full" label="别急别急别急..." />
       </section>
     );
   }
 
   return (
-    <section
-      className="relative -mx-6 -my-6 min-h-[calc(100vh-12rem)] overflow-hidden"
-      data-testid="home-quote-page"
-      onTouchCancel={handleTouchCancel}
-      onTouchEnd={handleTouchEnd}
-      onTouchMove={handleTouchMove}
-      onTouchStart={handleTouchStart}
-    >
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center"
-        style={{ transform: `translateY(${Math.max(pullDistance - 40, -36)}px)` }}
-      >
-        <div className="rounded-full border border-stone-200/60 bg-[#f6f2e8]/90 px-4 py-2 text-xs tracking-[0.18em] text-stone-600 shadow-sm backdrop-blur">
-          {refreshing ? (
-            <span aria-live="polite" className="flex items-center gap-2" role="status">
-              <PixelCat ariaLabel="loading-cat" className="text-stone-500" size={14} />
-              <span>正在换一组</span>
-            </span>
-          ) : pullDistance >= PULL_REFRESH_THRESHOLD ? (
-            '松手刷新'
-          ) : (
-            '下拉换一组'
-          )}
-        </div>
-      </div>
-
+    <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden overscroll-y-none" data-testid="home-quote-page">
       <div className="pointer-events-none absolute inset-x-0 top-4 z-30 flex flex-col items-center gap-2 px-6">
         {loginPrompt ? (
           <div className="pointer-events-auto rounded-full border border-amber-200/60 bg-amber-50/78 px-4 py-2 text-sm text-amber-900 backdrop-blur">
@@ -419,10 +387,9 @@ export function HomePage() {
           </p>
         ) : null}
       </div>
-
       <div
         ref={streamRef}
-        className="no-scrollbar flex h-[calc(100vh-12rem)] snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth"
+        className="no-scrollbar flex min-h-0 flex-1 snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth"
         data-testid="quote-stream"
         onScroll={handleScroll}
       >
@@ -436,11 +403,10 @@ export function HomePage() {
           />
         ))}
       </div>
-
-      <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 justify-between px-4">
+      <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 justify-between px-0">
         <button
           aria-label="上一条金句"
-          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/45 bg-white/28 text-stone-700 shadow-[0_16px_32px_rgba(28,25,23,0.12)] backdrop-blur-xl transition hover:bg-white/45 disabled:cursor-default disabled:opacity-30"
+          className="pointer-events-auto -translate-x-4 flex h-12 w-12 items-center justify-center rounded-full text-stone-500/70 transition disabled:cursor-default disabled:opacity-30"
           disabled={currentIndex === 0}
           onClick={() => handleStep(-1)}
           type="button"
@@ -449,7 +415,7 @@ export function HomePage() {
         </button>
         <button
           aria-label="下一条金句"
-          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/45 bg-white/28 text-stone-700 shadow-[0_16px_32px_rgba(28,25,23,0.12)] backdrop-blur-xl transition hover:bg-white/45 disabled:cursor-default disabled:opacity-30"
+          className="pointer-events-auto translate-x-4 flex h-12 w-12 items-center justify-center rounded-full text-stone-500/70 transition disabled:cursor-default disabled:opacity-30"
           disabled={currentIndex >= quotes.length - 1}
           onClick={() => handleStep(1)}
           type="button"
@@ -467,21 +433,60 @@ export function HomePage() {
         onOpenReflections={handleOpenReflections}
         onOpenStyleEditor={() => setStyleOpen(true)}
       />
+      {favoritePickerOpen ? (
+        <div
+          className="fixed inset-0 z-40 flex items-end bg-stone-950/35 backdrop-blur-sm"
+          data-testid="favorite-picker-backdrop"
+          onClick={() => setFavoritePickerOpen(false)}
+        >
+          <div
+            className="mx-auto flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl border border-stone-200/80 bg-white p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-20px_50px_rgba(28,25,23,0.12)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="font-serif text-xl text-stone-900">选择收藏夹</h3>
+              <button className="text-sm text-stone-500" onClick={() => setFavoritePickerOpen(false)} type="button">
+                关闭
+              </button>
+            </div>
+
+            {favoriteFoldersLoading ? <LoadingScreen compact label="收藏夹加载中" /> : null}
+            {!favoriteFoldersLoading && favoritePickerError ? <p className="mt-3 text-sm text-red-500">{favoritePickerError}</p> : null}
+
+            {!favoriteFoldersLoading && !favoritePickerError ? (
+              <div className="mt-4 grid gap-3 overflow-y-auto pr-1">
+                {favoriteFolders.map((folder) => (
+                  <button
+                    key={folder.id}
+                    className="flex items-center justify-between rounded-[1.5rem] border border-stone-200 bg-stone-50 px-4 py-3 text-left text-sm text-stone-700"
+                    onClick={() => void handleFavoriteToFolder(folder.id)}
+                    type="button"
+                  >
+                    <span>{folder.name}</span>
+                    <span className="text-xs text-stone-500">{folder.quoteCount} 条</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       <ReflectionPanel
         draft={reflectionDraft}
         items={reflections}
         loading={reflectionsLoading}
         onClose={() => setReflectionOpen(false)}
+        onDelete={(reflectionId) => void handleDeleteReflection(reflectionId)}
         onDraftChange={setReflectionDraft}
         onSubmit={handleCreateReflection}
         open={reflectionOpen}
         submitting={reflectionSubmitting}
       />
-
       <StyleEditorDrawer
         onChange={setQuoteStyle}
         onClose={() => setStyleOpen(false)}
         open={styleOpen}
+        previewQuote={currentQuote ?? undefined}
         stylePreset={quoteStyle}
       />
     </section>
@@ -499,17 +504,12 @@ function toHomeQuote(quote: QuoteListItem): HomeQuote {
 }
 
 function normalizeHeartbeatCount(response: unknown) {
-  if (!response || typeof response !== 'object' || !('count' in response)) {
+  if (!response || typeof response !== "object" || !("count" in response)) {
     return null;
   }
 
   const rawCount = (response as { count?: unknown }).count;
-  const normalized =
-    typeof rawCount === 'number'
-      ? rawCount
-      : typeof rawCount === 'string' && rawCount.trim() !== ''
-        ? Number(rawCount)
-        : Number.NaN;
+  const normalized = typeof rawCount === "number" ? rawCount : typeof rawCount === "string" && rawCount.trim() !== "" ? Number(rawCount) : Number.NaN;
 
   return Number.isFinite(normalized) ? normalized : null;
 }

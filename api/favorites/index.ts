@@ -1,10 +1,12 @@
 import { createUnauthorizedErrorResponse, getUserIdFromJwt, isAuthFailure, requireBearerToken } from "../_lib/auth.js";
 import { badRequest, internalError, notFound, successResponse, unauthorized } from "../_lib/http.js";
 import { createUserServerClient } from "../_lib/supabase.js";
+import { ensureDefaultFolder, getFolderById, readQueryValue } from "./folders-shared.js";
 import { getViewerStateMap } from "../quotes/viewer-state.js";
 
 interface FavoriteRow {
   quote_id: string;
+  folder_id?: string | null;
   created_at?: string | null;
   quotes:
     | {
@@ -43,15 +45,29 @@ export async function GET(request: Request) {
       return unauthorized("当前登录凭证无效，请重新登录。", "INVALID_TOKEN");
     }
 
+    const defaultFolder = await ensureDefaultFolder(userClient, userId);
+
     const parsed = parseFavoritesQuery(new URL(request.url));
 
     if ("code" in parsed) {
       return badRequest(parsed.message, parsed.code);
     }
 
+    let folderFilterId: string | null = null;
+
+    if (parsed.folderId) {
+      const folder = await getFolderById(userClient, userId, parsed.folderId);
+
+      if (!folder) {
+        return badRequest("收藏夹不存在。", "FOLDER_NOT_FOUND");
+      }
+
+      folderFilterId = folder.id;
+    }
+
     const query = userClient
       .from("favorites")
-      .select("quote_id, created_at, quotes(id, content, author, category, source, source_type, created_at)")
+      .select("quote_id, folder_id, created_at, quotes(id, content, author, category, source, source_type, created_at)")
       .eq("user_id", userId);
 
     const { data: favoriteRows, error: favoriteError } = await query.order("created_at", { ascending: false });
@@ -60,20 +76,30 @@ export async function GET(request: Request) {
       throw favoriteError;
     }
 
-    const viewerStateMap = await getViewerStateMap(userClient);
     const normalizedRows = ((favoriteRows ?? []) as FavoriteRow[])
       .map((row) => ({
         quote_id: row.quote_id,
+        folder_id: row.folder_id,
         created_at: row.created_at,
         quotes: getSingleQuote(row.quotes),
       }))
       .filter((row) => row.quotes);
 
-    const filtered = normalizedRows.filter((row) => (parsed.category ? row.quotes?.category === parsed.category : true));
+    const filtered = normalizedRows.filter((row) => {
+      const categoryMatched = parsed.category ? row.quotes?.category === parsed.category : true;
+      const folderMatched = folderFilterId ? (row.folder_id ?? defaultFolder.id) === folderFilterId : true;
+      return categoryMatched && folderMatched;
+    });
 
     const total = filtered.length;
     const rangeStart = (parsed.page - 1) * parsed.pageSize;
-    const pagedItems = filtered.slice(rangeStart, rangeStart + parsed.pageSize).map((row) => ({
+    const pagedRows = filtered.slice(rangeStart, rangeStart + parsed.pageSize);
+    const viewerStateMap = await getViewerStateMap(
+      userClient,
+      userId,
+      pagedRows.map((row) => row.quote_id),
+    );
+    const pagedItems = pagedRows.map((row) => ({
       id: row.quotes!.id,
       content: row.quotes!.content,
       author: row.quotes!.author,
@@ -108,6 +134,12 @@ export async function POST(request: Request) {
     }
 
     const { userClient, userId, quoteId } = authResult;
+    const targetFolderId = await resolveFolderId(request, userClient, userId);
+
+    if (targetFolderId instanceof Response) {
+      return targetFolderId;
+    }
+
     const quote = await findQuote(userClient, quoteId);
 
     if (!quote) {
@@ -118,10 +150,10 @@ export async function POST(request: Request) {
       {
         user_id: userId,
         quote_id: quoteId,
+        folder_id: targetFolderId,
       },
       {
         onConflict: "user_id,quote_id",
-        ignoreDuplicates: true,
       },
     );
 
@@ -168,9 +200,10 @@ export async function DELETE(request: Request) {
 }
 
 function parseFavoritesQuery(url: URL) {
-  const category = readValue(url.searchParams.get("category"));
-  const page = Number(readValue(url.searchParams.get("page")) ?? "1");
-  const pageSize = Number(readValue(url.searchParams.get("pageSize")) ?? "20");
+  const category = readQueryValue(url.searchParams.get("category"));
+  const folderId = readQueryValue(url.searchParams.get("folderId"));
+  const page = Number(readQueryValue(url.searchParams.get("page")) ?? "1");
+  const pageSize = Number(readQueryValue(url.searchParams.get("pageSize")) ?? "20");
 
   if (!Number.isInteger(page) || !Number.isInteger(pageSize) || page < 1 || pageSize < 1 || pageSize > 50) {
     return {
@@ -181,18 +214,10 @@ function parseFavoritesQuery(url: URL) {
 
   return {
     category,
+    folderId,
     page,
     pageSize,
   };
-}
-
-function readValue(value: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  const normalized = value.trim();
-  return normalized ? normalized : null;
 }
 
 function normalizeSourceType(value?: string | null) {
@@ -240,10 +265,33 @@ async function authenticateMutationRequest(request: Request) {
 
 async function readQuoteId(request: Request) {
   try {
-    const body = (await request.json()) as { quoteId?: unknown };
+    const body = (await request.clone().json()) as { quoteId?: unknown };
     return typeof body.quoteId === "string" && body.quoteId.trim() ? body.quoteId.trim() : null;
   } catch {
     return null;
+  }
+}
+
+async function resolveFolderId(request: Request, userClient: any, userId: string) {
+  const defaultFolder = await ensureDefaultFolder(userClient, userId);
+
+  try {
+    const body = (await request.clone().json()) as { folderId?: unknown };
+    const folderId = typeof body.folderId === "string" && body.folderId.trim() ? body.folderId.trim() : null;
+
+    if (!folderId) {
+      return defaultFolder.id;
+    }
+
+    const folder = await getFolderById(userClient, userId, folderId);
+
+    if (!folder) {
+      return badRequest("收藏夹不存在。", "FOLDER_NOT_FOUND");
+    }
+
+    return folder.id;
+  } catch {
+    return defaultFolder.id;
   }
 }
 

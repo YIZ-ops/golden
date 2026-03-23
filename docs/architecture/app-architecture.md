@@ -32,7 +32,6 @@
 - `src/hooks/useAuth.ts`
   - 统一封装账号密码登录、注册、忘记密码和重置密码
 
-
 ## 目标架构
 
 目标架构采用 `前端页面层 + Vercel Functions BFF + Supabase Auth/Postgres` 三层模型。
@@ -50,6 +49,7 @@
 - 负责身份校验和参数校验
 - 屏蔽数据库细节与 RLS 细节
 - 为首页和收藏页聚合 `viewerState`
+- `api/*` 目录运行时代码统一使用相对导入 + `.js` 扩展名，不使用 `@/...` 别名
 
 ### Supabase
 

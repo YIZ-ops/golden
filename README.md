@@ -37,6 +37,7 @@
 
 默认情况下，Vite 会把 `/api/*` 代理到 `http://127.0.0.1:3001`。
 如果你想改本地函数端口，可以先设置环境变量 `VITE_API_PROXY_TARGET`，再启动 `npm run dev`。
+
 - Supabase Auth
 - Supabase Postgres
 - Vercel Functions
@@ -117,6 +118,17 @@ npm run build
 ```
 
 前端 SPA 重写配置见 [vercel.json](/C:/Users/14798/Desktop/金/vercel.json)。
+
+### Vercel Functions（Node.js Runtime）注意事项
+
+为避免部署后出现 `ERR_MODULE_NOT_FOUND`（如 `Cannot find module '../_lib/http'` 或 `Cannot find package '@/constants'`），请遵循：
+
+1. `api/*` 下的运行时代码不要使用 TS 路径别名（`@/...`），统一使用相对路径。
+2. `api/*` 下的相对导入要显式带 `.js` 扩展名（例如 `../_lib/http.js`、`./query.js`）。
+3. 以上规则仅针对 Vercel Function 运行时代码；前端 `src/*` 保持 `@/...` 别名不受影响。
+4. 每次修改 API 导入后，先本地执行 `npm run build` 再部署。
+
+原因：Vercel Node.js Runtime 对 TypeScript Path Mapping（`paths`/`baseUrl`）不做运行时解析，且 ESM 相对导入需要可解析的文件扩展名。
 
 ## 架构文档
 

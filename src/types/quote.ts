@@ -6,12 +6,6 @@ export interface QuotePerson {
   role: PersonRole;
 }
 
-export interface QuoteWork {
-  id: string;
-  title: string;
-  workType?: 'book' | 'song' | 'speech' | 'interview' | 'essay' | 'other';
-}
-
 export interface Quote {
   id: string;
   content: string;
@@ -20,7 +14,6 @@ export interface Quote {
   category?: string;
   sourceType?: 'seed' | 'hitokoto' | 'manual';
   person?: QuotePerson;
-  work?: QuoteWork;
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;

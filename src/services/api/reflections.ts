@@ -23,3 +23,10 @@ export async function createReflection(input: CreateReflectionInput) {
     body: input,
   });
 }
+
+export async function deleteReflection(reflectionId: string) {
+  return apiRequest<{ deleted: true; reflectionId: string }>('/api/reflections', {
+    method: 'DELETE',
+    body: { reflectionId },
+  });
+}

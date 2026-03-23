@@ -66,19 +66,12 @@ export function CategoryFilters({
         </label>
       </div>
 
-      <FilterSection
-        items={categories}
-        onSelect={(item) => onCategorySelect(item.id)}
-        title="主题分类"
-        subtitle="点一下，拉一条新的句子进来"
-        disabled={loading}
-      />
+      <FilterSection items={categories} onSelect={(item) => onCategorySelect(item.id)} title="主题分类" disabled={loading} />
       <FilterSection
         items={authorItems}
         onSelect={(item) => onAuthorSelect(item as PersonListItem)}
         title="作者"
-        subtitle="按作者把相关句子集中找出来"
-        actionLabel="换一换作者"
+        actionLabel="换一换"
         onAction={onRotateAuthors}
         disabled={loading}
       />
@@ -86,8 +79,7 @@ export function CategoryFilters({
         items={singerItems}
         onSelect={(item) => onSingerSelect(item as PersonListItem)}
         title="歌手"
-        subtitle="按歌手去翻歌词和相关摘句"
-        actionLabel="换一换歌手"
+        actionLabel="换一换"
         onAction={onRotateSingers}
         disabled={loading}
       />
@@ -97,7 +89,6 @@ export function CategoryFilters({
 
 function FilterSection({
   title,
-  subtitle,
   items,
   onSelect,
   actionLabel,
@@ -105,7 +96,6 @@ function FilterSection({
   disabled,
 }: {
   title: string;
-  subtitle: string;
   items: FilterSectionItem[];
   onSelect: (item: FilterSectionItem) => void;
   actionLabel?: string;
@@ -117,7 +107,6 @@ function FilterSection({
       <div className="flex items-center justify-between gap-4">
         <div>
           <h3 className="text-sm font-semibold text-stone-900">{title}</h3>
-          <p className="mt-1 text-xs text-stone-500">{subtitle}</p>
         </div>
         {actionLabel && onAction ? (
           <button

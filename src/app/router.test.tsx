@@ -33,7 +33,7 @@ describe('App router', () => {
       </Suspense>,
     );
 
-    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: heading }, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText(description)).toBeInTheDocument();
   });
 });

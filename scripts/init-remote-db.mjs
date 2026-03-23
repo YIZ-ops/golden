@@ -27,11 +27,14 @@ const databaseUrl = parsedDatabaseUrl.toString();
 
 const sqlFiles = [
   path.join(projectRoot, 'supabase', 'migrations', '20260321_initial_schema.sql'),
+  path.join(projectRoot, 'supabase', 'migrations', '20260322_favorite_folders.sql'),
   path.join(projectRoot, 'supabase', 'migrations', '20260322_people_works_quotes.sql'),
   path.join(projectRoot, 'supabase', 'migrations', '20260322_legacy_singer_cleanup.sql'),
+  path.join(projectRoot, 'supabase', 'migrations', '20260322_quote_ingestion_and_home_pool.sql'),
+  path.join(projectRoot, 'supabase', 'migrations', '20260322_optimize_home_quote_randomness.sql'),
+  path.join(projectRoot, 'supabase', 'migrations', '20260323_drop_works_and_redundant_quote_columns.sql'),
   path.join(projectRoot, 'supabase', 'seed.sql'),
   path.join(projectRoot, 'supabase', 'seeds', 'people.sql'),
-  path.join(projectRoot, 'supabase', 'seeds', 'works.sql'),
   path.join(projectRoot, 'supabase', 'seeds', 'quotes-curated.sql'),
 ];
 

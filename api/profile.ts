@@ -38,11 +38,21 @@ export async function PATCH(request: Request) {
 
     await ensureProfile(authResult.userClient as any, authResult.user as any);
 
-    const updateQuery = authResult.userClient.from("profiles").update({
-      display_name: updates.displayName,
-      avatar_url: updates.avatarUrl,
-      theme_mode: updates.themeMode,
-    });
+    const updatePayload: Record<string, string | null> = {};
+
+    if (updates.hasDisplayName) {
+      updatePayload.display_name = updates.displayName;
+    }
+
+    if (updates.hasAvatarUrl) {
+      updatePayload.avatar_url = updates.avatarUrl;
+    }
+
+    if (updates.hasThemeMode) {
+      updatePayload.theme_mode = updates.themeMode;
+    }
+
+    const updateQuery = authResult.userClient.from("profiles").update(updatePayload);
     const { data, error } = await updateQuery.eq("id", authResult.user.id).select("*").maybeSingle();
 
     if (error) {
@@ -88,18 +98,29 @@ async function readJson(request: Request) {
 
 function parseProfilePatch(body: Record<string, unknown>) {
   const allowedThemeModes = new Set(["light", "dark", "system"]);
-  const displayName = readOptionalString(body.displayName);
-  const avatarUrl = readOptionalString(body.avatarUrl);
-  const themeMode = readOptionalString(body.themeMode);
+  const hasDisplayName = hasOwn(body, "displayName");
+  const hasAvatarUrl = hasOwn(body, "avatarUrl");
+  const hasThemeMode = hasOwn(body, "themeMode");
 
-  if (themeMode && !allowedThemeModes.has(themeMode)) {
+  if (!hasDisplayName && !hasAvatarUrl && !hasThemeMode) {
     return {
       message: "profile patch 参数无效。",
       code: "INVALID_PROFILE_PATCH",
     };
   }
 
-  if (!displayName && !avatarUrl && !themeMode) {
+  const displayName = hasDisplayName ? readPatchString(body.displayName) : undefined;
+  const avatarUrl = hasAvatarUrl ? readPatchString(body.avatarUrl) : undefined;
+  const themeMode = hasThemeMode ? readPatchString(body.themeMode) : undefined;
+
+  if (displayName === INVALID_PATCH_VALUE || avatarUrl === INVALID_PATCH_VALUE || themeMode === INVALID_PATCH_VALUE) {
+    return {
+      message: "profile patch 参数无效。",
+      code: "INVALID_PROFILE_PATCH",
+    };
+  }
+
+  if (hasThemeMode && (!themeMode || !allowedThemeModes.has(themeMode))) {
     return {
       message: "profile patch 参数无效。",
       code: "INVALID_PROFILE_PATCH",
@@ -110,11 +131,25 @@ function parseProfilePatch(body: Record<string, unknown>) {
     displayName,
     avatarUrl,
     themeMode,
+    hasDisplayName,
+    hasAvatarUrl,
+    hasThemeMode,
   };
 }
 
-function readOptionalString(value: unknown) {
-  return typeof value === "string" && value.trim() ? value.trim() : null;
+const INVALID_PATCH_VALUE = Symbol("INVALID_PATCH_VALUE");
+
+function readPatchString(value: unknown) {
+  if (typeof value !== "string") {
+    return INVALID_PATCH_VALUE;
+  }
+
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function hasOwn(object: Record<string, unknown>, key: string) {
+  return Object.prototype.hasOwnProperty.call(object, key);
 }
 
 function normalizeProfile(profile: any) {

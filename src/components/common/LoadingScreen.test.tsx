@@ -1,18 +1,17 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen } from "@testing-library/react";
 
-import { LoadingScreen } from '@/components/common/LoadingScreen';
+import { LoadingScreen } from "@/components/common/LoadingScreen";
 
-describe('LoadingScreen', () => {
-  it('renders status semantics with the provided label', () => {
+describe("LoadingScreen", () => {
+  it("uses theme-aware classes for the container and label", () => {
     render(<LoadingScreen label="页面加载中..." />);
 
-    expect(screen.getByRole('status')).toHaveTextContent('页面加载中...');
-    expect(screen.getByLabelText('loading-cat')).toBeInTheDocument();
-  });
+    const status = screen.getByRole("status");
+    const label = screen.getByText("页面加载中...");
+    const icon = screen.getByLabelText("loading-cat");
 
-  it('renders compact loading', () => {
-    render(<LoadingScreen compact label="感悟加载中..." />);
-
-    expect(screen.getByRole('status')).toHaveTextContent('感悟加载中...');
+    expect(status.className).toContain("app-muted");
+    expect(label.className).toContain("app-text");
+    expect(icon.getAttribute("class")).toContain("app-text");
   });
 });

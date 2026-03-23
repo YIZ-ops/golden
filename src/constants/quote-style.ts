@@ -2,7 +2,7 @@ import type { QuoteStyle } from '@/types/quote';
 
 export const DEFAULT_QUOTE_STYLE: QuoteStyle = {
   fontSize: 24,
-  fontFamily: "'Cormorant Garamond', serif",
+  fontFamily: "'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif",
   color: '#1a1a1a',
   fontWeight: '400',
   textAlign: 'center',
@@ -14,8 +14,17 @@ export const DEFAULT_QUOTE_STYLE: QuoteStyle = {
 };
 
 export const FONT_FAMILIES = [
-  { name: 'Serif (Classic)', value: "'Cormorant Garamond', serif" },
-  { name: 'Sans (Modern)', value: "'Inter', sans-serif" },
-  { name: 'Mono (Technical)', value: "'JetBrains Mono', monospace" },
-  { name: 'Elegant', value: "'Playfair Display', serif" },
+  { name: '中文宋体', value: "'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif" },
+  { name: '中文黑体', value: "'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif" },
+  { name: '中文楷体', value: "'LXGW WenKai', 'STKaiti', 'KaiTi', serif" },
+  { name: '等宽中文', value: "'Sarasa Mono SC', 'JetBrains Mono', 'Microsoft YaHei', monospace" },
+] as const;
+
+export const BACKGROUND_PRESETS = [
+  { name: '米白', value: '#fdfcf0' },
+  { name: '暖杏', value: '#f7ead9' },
+  { name: '雾蓝', value: '#e8eff5' },
+  { name: '竹青', value: '#e7f1ea' },
+  { name: '浅灰', value: '#f2f2ee' },
+  { name: '夜墨', value: '#202126' },
 ] as const;

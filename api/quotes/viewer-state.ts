@@ -8,18 +8,23 @@ interface HeartbeatRow {
 }
 
 export async function getViewerStateMap(
-  userClient: {
-    from: (table: 'favorites' | 'heartbeats') => {
-      select: (columns: string) => PromiseLike<{ data: FavoriteRow[] | HeartbeatRow[] | null; error: Error | null }> | {
-        then: PromiseLike<{ data: FavoriteRow[] | HeartbeatRow[] | null; error: Error | null }>['then'];
-      };
-    };
-  },
+  userClient: any,
+  userId: string,
+  quoteIds: string[],
 ) {
+  const uniqueQuoteIds = Array.from(new Set(quoteIds.filter(Boolean)));
+
+  if (uniqueQuoteIds.length === 0) {
+    return {
+      favoriteSet: new Set<string>(),
+      heartbeatMap: new Map<string, number>(),
+    };
+  }
+
   const [{ data: favoriteRows, error: favoriteError }, { data: heartbeatRows, error: heartbeatError }] =
     await Promise.all([
-      userClient.from('favorites').select('quote_id'),
-      userClient.from('heartbeats').select('quote_id, count'),
+      userClient.from('favorites').select('quote_id').eq('user_id', userId).in('quote_id', uniqueQuoteIds),
+      userClient.from('heartbeats').select('quote_id, count').eq('user_id', userId).in('quote_id', uniqueQuoteIds),
     ]);
 
   if (favoriteError) {

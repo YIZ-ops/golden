@@ -19,7 +19,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-md -translate-x-1/2 justify-between border-t border-stone-200/80 bg-white/95 px-6 py-4 backdrop-blur">
+    <nav className="app-nav fixed bottom-0 left-1/2 z-20 flex w-full max-w-md -translate-x-1/2 justify-between px-6 py-2.5 backdrop-blur">
       {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
         <NavLink
           key={to}
@@ -27,8 +27,8 @@ export function BottomNav() {
           end={end}
           className={({ isActive }) =>
             cn(
-              'flex min-w-16 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-xs transition-colors',
-              isActive ? 'text-stone-900' : 'text-stone-400',
+              'flex min-w-16 flex-col items-center gap-0.5 rounded-2xl px-3 py-1 text-xs transition-colors',
+              isActive ? 'app-text' : 'app-muted',
             )
           }
         >

@@ -1,4 +1,10 @@
-import { createUnauthorizedErrorResponse, getOptionalBearerToken, getUserIdFromJwt, isAuthFailure } from "../_lib/auth.js";
+import {
+  createUnauthorizedErrorResponse,
+  getOptionalBearerToken,
+  getUserIdFromJwt,
+  isAuthFailure,
+  requireBearerToken,
+} from "../_lib/auth.js";
 import { badRequest, internalError, successResponse, unauthorized } from "../_lib/http.js";
 import { createAnonServerClient, createUserServerClient } from "../_lib/supabase.js";
 import { getViewerStateMap } from "./viewer-state.js";
@@ -13,17 +19,55 @@ interface QuoteRow {
   category?: string | null;
   source?: string | null;
   source_type?: string | null;
+  created_by?: string | null;
   created_at?: string | null;
   people?: {
     id: string;
     name: string;
     role: "author" | "singer";
   } | null;
-  works?: {
-    id: string;
-    title: string;
-    work_type: string;
-  } | null;
+}
+
+export async function POST(request: Request) {
+  try {
+    const authResult = await authenticateWriteRequest(request);
+
+    if (authResult instanceof Response) {
+      return authResult;
+    }
+
+    const body = await readJson(request);
+    const input = parseQuoteCreate(body);
+
+    if ("code" in input) {
+      return badRequest(input.message, input.code);
+    }
+
+    const { data, error } = await authResult.userClient
+      .from("quotes")
+      .insert({
+        content: input.content,
+        author: input.author,
+        source: input.source,
+        category: input.category,
+        source_type: "manual",
+        author_role: "unknown",
+        created_by: authResult.user.id,
+      })
+      .select("*")
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return successResponse({
+      quote: normalizeQuoteRow(data),
+    });
+  } catch (error) {
+    console.error("POST /api/quotes failed", error);
+    return internalError("创建句子失败。", "QUOTE_CREATE_FAILED");
+  }
 }
 
 export async function GET(request: Request) {
@@ -37,10 +81,10 @@ export async function GET(request: Request) {
 
     let currentUserId: string | null = null;
     let queryClient = createAnonServerClient();
-    let viewerStateMap: Awaited<ReturnType<typeof getViewerStateMap>> | null = null;
+    let userClient: ReturnType<typeof createUserServerClient> | null = null;
 
     if (typeof maybeToken === "string") {
-      const userClient = createUserServerClient(maybeToken);
+      userClient = createUserServerClient(maybeToken);
       const userId = getUserIdFromJwt(maybeToken);
 
       if (!userId) {
@@ -49,7 +93,6 @@ export async function GET(request: Request) {
 
       currentUserId = userId;
       queryClient = userClient;
-      viewerStateMap = await getViewerStateMap(userClient);
     }
 
     const parsed = parseQuoteQuery(new URL(request.url));
@@ -63,7 +106,7 @@ export async function GET(request: Request) {
 
     let query = queryClient
       .from("quotes")
-      .select("*, people(id, name, role), works(id, title, work_type)", { count: "exact" })
+      .select("*, people(id, name, role)", { count: "exact" })
       .order("created_at", { ascending: false });
 
     if (parsed.category) {
@@ -92,30 +135,17 @@ export async function GET(request: Request) {
       throw error;
     }
 
+    const viewerStateMap =
+      currentUserId && userClient
+        ? await getViewerStateMap(
+            userClient,
+            currentUserId,
+            (data ?? []).map((item: QuoteRow) => item.id),
+          )
+        : null;
+
     const items = (data ?? []).map((item: QuoteRow) => {
-      const normalized = {
-        id: item.id,
-        content: item.content,
-        author: item.author,
-        category: item.category ?? undefined,
-        source: item.source ?? undefined,
-        sourceType: normalizeSourceType(item.source_type),
-        createdAt: item.created_at ?? undefined,
-        person: item.people
-          ? {
-              id: item.people.id,
-              name: item.people.name,
-              role: item.people.role,
-            }
-          : undefined,
-        work: item.works
-          ? {
-              id: item.works.id,
-              title: item.works.title,
-              workType: normalizeWorkType(item.works.work_type),
-            }
-          : undefined,
-      };
+      const normalized = normalizeQuoteRow(item);
 
       if (!currentUserId || !viewerStateMap) {
         return normalized;
@@ -142,16 +172,108 @@ export async function GET(request: Request) {
   }
 }
 
-function normalizeSourceType(value?: string | null) {
-  if (value === "seed" || value === "hitokoto" || value === "manual") {
-    return value;
+async function authenticateWriteRequest(request: Request) {
+  const token = requireBearerToken(request.headers.get("Authorization"));
+
+  if (isAuthFailure(token)) {
+    return createUnauthorizedErrorResponse(token);
   }
 
-  return undefined;
+  const userClient = createUserServerClient(token);
+  const { data, error } = await userClient.auth.getUser(token);
+
+  if (error || !data.user) {
+    return unauthorized("当前登录凭证无效，请重新登录。", "INVALID_TOKEN");
+  }
+
+  return {
+    userClient,
+    user: data.user,
+  };
 }
 
-function normalizeWorkType(value?: string | null) {
-  if (value === "book" || value === "song" || value === "speech" || value === "interview" || value === "essay" || value === "other") {
+async function readJson(request: Request) {
+  try {
+    return (await request.json()) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+function parseQuoteCreate(body: Record<string, unknown>) {
+  const content = readRequiredString(body.content);
+  const author = readRequiredString(body.author);
+  const source = readOptionalString(body.source);
+  const category = readOptionalString(body.category);
+
+  if (content === INVALID_CREATE_VALUE || author === INVALID_CREATE_VALUE || source === INVALID_CREATE_VALUE || category === INVALID_CREATE_VALUE) {
+    return {
+      message: "quote create 参数无效。",
+      code: "INVALID_QUOTE_CREATE",
+    };
+  }
+
+  if (!content || !author) {
+    return {
+      message: "quote create 参数无效。",
+      code: "INVALID_QUOTE_CREATE",
+    };
+  }
+
+  return {
+    content,
+    author,
+    source,
+    category,
+  };
+}
+
+const INVALID_CREATE_VALUE = Symbol("INVALID_CREATE_VALUE");
+
+function readRequiredString(value: unknown) {
+  if (typeof value !== "string") {
+    return INVALID_CREATE_VALUE;
+  }
+
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
+function readOptionalString(value: unknown) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== "string") {
+    return INVALID_CREATE_VALUE;
+  }
+
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
+function normalizeQuoteRow(item: QuoteRow | null | undefined) {
+  return {
+    id: item?.id,
+    content: item?.content,
+    author: item?.author,
+    category: item?.category ?? undefined,
+    source: item?.source ?? undefined,
+    sourceType: normalizeSourceType(item?.source_type),
+    createdBy: item?.created_by ?? undefined,
+    createdAt: item?.created_at ?? undefined,
+    person: item?.people
+      ? {
+          id: item.people.id,
+          name: item.people.name,
+          role: item.people.role,
+        }
+      : undefined,
+  };
+}
+
+function normalizeSourceType(value?: string | null) {
+  if (value === "seed" || value === "hitokoto" || value === "manual") {
     return value;
   }
 

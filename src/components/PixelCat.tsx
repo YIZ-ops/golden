@@ -73,10 +73,10 @@ export const PixelCat = ({
         times: [0, 0.9, 0.95, 0.98, 1],
       }}
     >
-      <path d="M4 6H6V8H4V6Z" fill="white" />
-      <path d="M10 6H12V8H10V6Z" fill="white" />
-      <path d="M5 7H6V8H5V7Z" fill="black" />
-      <path d="M11 7H12V8H11V7Z" fill="black" />
+      <path d="M4 6H6V8H4V6Z" fill="var(--app-surface)" />
+      <path d="M10 6H12V8H10V6Z" fill="var(--app-surface)" />
+      <path d="M5 7H6V8H5V7Z" fill="var(--app-text)" />
+      <path d="M11 7H12V8H11V7Z" fill="var(--app-text)" />
     </motion.g>
 
     <path d="M1 7H3V7.5H1V7Z" fill="currentColor" opacity="0.3" />
